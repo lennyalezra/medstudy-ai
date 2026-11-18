@@ -1,0 +1,376 @@
+
+/* ===== GLOBAL ===== */
+
+:root {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #292638;
+  background: #fafafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+/* ===== APPLICATION ===== */
+
+.app-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: #fafafc;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar {
+  width: 265px;
+  min-width: 265px;
+  min-height: 100vh;
+  padding: 28px 20px;
+  background: #f5f1fc;
+  border-right: 1px solid #eee8f5;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.sidebar-logo {
+  margin: 0 0 0 15px;
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.7px;
+  color: #514077;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sidebar-nav a {
+  padding: 13px 18px;
+  border-radius: 13px;
+  text-decoration: none;
+  color: #454052;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav a:hover {
+  background: #eae2f7;
+  color: #604b90;
+}
+
+.sidebar-nav a:first-child {
+  background: #e5daf6;
+  color: #514077;
+  font-weight: 650;
+}
+
+/* ===== DASHBOARD ===== */
+
+main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 45px 25px;
+}
+
+main h1 {
+  margin: 0 0 6px;
+  font-size: clamp(24px, 2.2vw, 32px);
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  color: #292638;
+}
+
+main > p {
+  margin: 0;
+  font-size: 15px;
+  color: #797287;
+  line-height: 1.5;
+}
+
+/* ===== BANNIERE ===== */
+
+.welcome-banner {
+  position: relative;
+  overflow: hidden;
+  margin-top: 22px;
+  padding: 25px 30px;
+  border-radius: 20px;
+  background: linear-gradient(
+    120deg,
+    #f5f0fb 0%,
+    #f0e9fa 65%,
+    #e9dff6 100%
+  );
+  border: 1px solid #eee6f7;
+  transition: transform 0.25s ease;
+}
+
+.welcome-banner:hover {
+  transform: translateY(-2px);
+}
+
+.welcome-banner::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -80px;
+  bottom: -150px;
+  border-radius: 50%;
+  background: rgba(180, 155, 220, 0.13);
+  pointer-events: none;
+}
+
+.welcome-banner h2 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px;
+  font-size: clamp(20px, 1.8vw, 26px);
+  font-weight: 750;
+  color: #453365;
+}
+
+.welcome-banner p {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 18px;
+  max-width: 650px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #706580;
+}
+
+.welcome-banner button {
+  position: relative;
+  z-index: 1;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #8066b5;
+  color: white;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.welcome-banner button:hover {
+  background: #6b519d;
+  transform: translateY(-2px);
+}
+
+/* ===== CARTES DE STATISTIQUES ===== */
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #eee8f5;
+  border-radius: 15px;
+  padding: 18px 20px;
+  box-shadow: 0 5px 20px rgba(70, 50, 110, 0.035);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(70, 50, 110, 0.08);
+}
+
+.stat-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #756b84;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 750;
+  color: #69509d;
+}
+
+/* ===== MES COURS RECENTS ===== */
+
+.recent-courses {
+  margin-top: 25px;
+}
+
+.recent-courses > h2 {
+  margin: 0 0 14px;
+  font-size: 21px;
+  font-weight: 750;
+  color: #302b43;
+}
+
+/* ===== CARTES DES COURS ===== */
+
+.course-card {
+  background: #ffffff;
+  border: 1px solid #eee8f5;
+  border-radius: 13px;
+  padding: 13px 20px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 15px rgba(70, 50, 110, 0.025);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-2px);
+  border-color: #d7c8ef;
+  box-shadow: 0 8px 20px rgba(70, 50, 110, 0.07);
+}
+
+.course-card h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #514077;
+}
+
+.course-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #797287;
+}
+
+/* ===== GRAND ECRAN ===== */
+
+@media (min-width: 901px) and (min-height: 700px) {
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  .app-container {
+    height: 100vh;
+    min-height: 0;
+  }
+
+  .sidebar {
+    height: 100vh;
+    min-height: 0;
+  }
+
+  main {
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+/* ===== TABLETTE ===== */
+
+@media (max-width: 1000px) {
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+  }
+
+  main {
+    padding: 25px;
+  }
+}
+
+/* ===== MOBILE ===== */
+
+@media (max-width: 650px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+    padding: 20px;
+    gap: 18px;
+  }
+
+  .sidebar-logo {
+    margin-left: 0;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .sidebar-nav a {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  main {
+    height: auto;
+    overflow: visible;
+    padding: 25px 18px;
+  }
+
+  main h1 {
+    font-size: 25px;
+  }
+
+  .welcome-banner {
+    padding: 24px 20px;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .course-card {
+    padding: 15px;
+  }
+}
+
+/* ===== PETITS ECRANS EN HAUTEUR ===== */
+
+@media (max-height: 699px) {
+  html,
+  body {
+    overflow-y: auto;
+  }
+}
+
+/* ===== ACCESSIBILITE ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-banner,
+  .welcome-banner button,
+  .sidebar-nav a,
+  .stat-card,
+  .course-card {
+    transition: none;
+  }
+}
