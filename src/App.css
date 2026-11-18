@@ -1,10 +1,11 @@
 
-/* ===== GLOBAL ===== */
-
 :root {
   font-family: "Segoe UI", Arial, sans-serif;
-  color: #292638;
-  background: #fafafc;
+  color: #302a42;
+  background: #faf9fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -15,8 +16,8 @@ html,
 body,
 #root {
   margin: 0;
-  min-height: 100%;
   width: 100%;
+  min-height: 100%;
 }
 
 body {
@@ -28,35 +29,35 @@ a {
   font: inherit;
 }
 
-/* ===== APPLICATION ===== */
+/* STRUCTURE */
 
 .app-container {
   display: flex;
   width: 100%;
   min-height: 100vh;
-  background: #fafafc;
+  background: #faf9fc;
 }
 
-/* ===== SIDEBAR ===== */
+/* SIDEBAR */
 
 .sidebar {
-  width: 265px;
-  min-width: 265px;
+  width: 255px;
+  flex-shrink: 0;
   min-height: 100vh;
-  padding: 28px 20px;
-  background: #f5f1fc;
-  border-right: 1px solid #eee8f5;
+  padding: 26px 19px;
+  background: #f3effa;
+  border-right: 1px solid #eae3f4;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
 }
 
 .sidebar-logo {
   margin: 0 0 0 15px;
+  color: #58447e;
   font-size: 25px;
   font-weight: 750;
   letter-spacing: -0.7px;
-  color: #514077;
 }
 
 .sidebar-nav {
@@ -66,106 +67,116 @@ a {
 }
 
 .sidebar-nav a {
-  padding: 13px 18px;
-  border-radius: 13px;
-  text-decoration: none;
-  color: #454052;
-  font-size: 15px;
+  display: block;
+  padding: 12px 17px;
+  border-radius: 12px;
+  color: #5c536b;
+  font-size: 14px;
   font-weight: 500;
+  text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-nav a:hover {
-  background: #eae2f7;
-  color: #604b90;
+  background: #e8def6;
+  color: #654c97;
 }
 
 .sidebar-nav a:first-child {
-  background: #e5daf6;
-  color: #514077;
-  font-weight: 650;
+  background: #e4d9f5;
+  color: #60468f;
+  font-weight: 700;
 }
 
-/* ===== DASHBOARD ===== */
+/* CONTENU PRINCIPAL */
 
 main {
   flex: 1;
   min-width: 0;
-  padding: 28px 45px 25px;
+  padding: 20px 36px;
 }
 
-main h1 {
-  margin: 0 0 6px;
-  font-size: clamp(24px, 2.2vw, 32px);
+main > h1 {
+  margin: 0 0 4px;
+  color: #30283f;
+  font-size: clamp(23px, 2vw, 29px);
   font-weight: 750;
   letter-spacing: -0.8px;
-  color: #292638;
+  text-align: center;
 }
 
 main > p {
   margin: 0;
-  font-size: 15px;
-  color: #797287;
-  line-height: 1.5;
+  color: #82798f;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
 }
 
-/* ===== BANNIERE ===== */
+/* BANNIÈRE */
 
 .welcome-banner {
   position: relative;
   overflow: hidden;
-  margin-top: 22px;
-  padding: 25px 30px;
-  border-radius: 20px;
+  margin-top: 14px;
+  padding: 20px 24px;
+  border: 1px solid #ebe1f6;
+  border-radius: 18px;
   background: linear-gradient(
     120deg,
-    #f5f0fb 0%,
-    #f0e9fa 65%,
-    #e9dff6 100%
+    #f4edfc 0%,
+    #eee4fa 55%,
+    #e6d8f5 100%
   );
-  border: 1px solid #eee6f7;
-  transition: transform 0.25s ease;
+  text-align: center;
 }
 
-.welcome-banner:hover {
-  transform: translateY(-2px);
-}
-
+.welcome-banner::before,
 .welcome-banner::after {
   content: "";
   position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -80px;
-  bottom: -150px;
   border-radius: 50%;
-  background: rgba(180, 155, 220, 0.13);
   pointer-events: none;
+}
+
+.welcome-banner::before {
+  width: 180px;
+  height: 180px;
+  top: -115px;
+  left: -65px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.welcome-banner::after {
+  width: 230px;
+  height: 230px;
+  right: -95px;
+  bottom: -155px;
+  background: rgba(166, 135, 213, 0.12);
 }
 
 .welcome-banner h2 {
   position: relative;
   z-index: 1;
-  margin: 0 0 10px;
-  font-size: clamp(20px, 1.8vw, 26px);
+  margin: 0 0 7px;
+  color: #503b78;
+  font-size: 21px;
   font-weight: 750;
-  color: #453365;
 }
 
 .welcome-banner p {
   position: relative;
   z-index: 1;
-  margin: 0 0 18px;
-  max-width: 650px;
+  margin: 0 auto 12px;
+  color: #736684;
   font-size: 14px;
-  line-height: 1.5;
-  color: #706580;
+  line-height: 1.4;
 }
 
 .welcome-banner button {
   position: relative;
   z-index: 1;
-  padding: 11px 22px;
+  padding: 10px 22px;
   border: none;
   border-radius: 10px;
   background: #8066b5;
@@ -177,130 +188,220 @@ main > p {
 }
 
 .welcome-banner button:hover {
-  background: #6b519d;
+  background: #6d529f;
   transform: translateY(-2px);
 }
 
-/* ===== CARTES DE STATISTIQUES ===== */
+/* STATISTIQUES */
 
 .stats-container {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 20px;
+  gap: 15px;
+  margin-top: 15px;
 }
 
 .stat-card {
-  background: #ffffff;
-  border: 1px solid #eee8f5;
+  min-height: 75px;
+  padding: 12px 16px;
+  border: 1px solid #ede7f4;
   border-radius: 15px;
-  padding: 18px 20px;
-  box-shadow: 0 5px 20px rgba(70, 50, 110, 0.035);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: #ffffff;
+  box-shadow: 0 5px 20px rgba(75, 55, 110, 0.035);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(70, 50, 110, 0.08);
+  box-shadow: 0 10px 25px rgba(75, 55, 110, 0.08);
 }
 
 .stat-card h3 {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
+  color: #80748e;
   font-size: 14px;
   font-weight: 600;
-  color: #756b84;
 }
 
 .stat-card p {
   margin: 0;
-  font-size: 30px;
+  color: #7155a5;
+  font-size: 28px;
   font-weight: 750;
-  color: #69509d;
+  line-height: 1.1;
 }
 
-/* ===== MES COURS RECENTS ===== */
+/* COURS RÉCENTS */
 
 .recent-courses {
-  margin-top: 25px;
+  margin-top: 17px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .recent-courses > h2 {
-  margin: 0 0 14px;
-  font-size: 21px;
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #342c46;
+  font-size: 20px;
   font-weight: 750;
-  color: #302b43;
+  text-align: center;
 }
 
-/* ===== CARTES DES COURS ===== */
-
 .course-card {
+  min-height: 105px;
+  padding: 18px 20px;
+  border: 1px solid #ebe5f2;
+  border-radius: 15px;
   background: #ffffff;
-  border: 1px solid #eee8f5;
-  border-radius: 13px;
-  padding: 13px 20px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 15px rgba(70, 50, 110, 0.025);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 5px 20px rgba(75, 55, 110, 0.035);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .course-card:hover {
-  transform: translateY(-2px);
-  border-color: #d7c8ef;
-  box-shadow: 0 8px 20px rgba(70, 50, 110, 0.07);
+  transform: translateY(-3px);
+  border-color: #d6c7eb;
+  box-shadow: 0 12px 28px rgba(75, 55, 110, 0.09);
 }
 
 .course-card h3 {
-  margin: 0 0 4px;
-  font-size: 15px;
+  margin: 0 0 8px;
+  color: #594280;
+  font-size: 17px;
   font-weight: 700;
-  color: #514077;
+  text-transform: capitalize;
 }
 
 .course-card p {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #797287;
+  color: #777084;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* ===== GRAND ECRAN ===== */
+/* RÉVISIONS ET PROGRESSION */
 
-@media (min-width: 901px) and (min-height: 700px) {
-  html,
-  body {
-    overflow: hidden;
-  }
+.revision-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  margin-top: 16px;
+}
 
-  .app-container {
+.revision-card {
+  min-height: 125px;
+  padding: 16px 20px;
+  border: 1px solid #ebe5f2;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 20px rgba(75, 55, 110, 0.035);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.revision-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(75, 55, 110, 0.08);
+}
+
+.revision-card h2 {
+  margin: 0 0 7px;
+  color: #4f3d72;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.revision-card p {
+  margin: 0 0 7px;
+  color: #80778c;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.revision-card:first-child p:last-child {
+  margin: 7px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f4fb;
+  color: #76668d;
+}
+
+.revision-card:last-child p:last-child {
+  margin: 5px 0 0;
+  color: #7558ab;
+  font-size: 27px;
+  font-weight: 750;
+}
+
+.revision-card:last-child::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 20px;
+  background: #eee8f6;
+}
+
+/* DASHBOARD ADAPTATIF À LA HAUTEUR */
+
+@media (min-width: 1101px) and (min-height: 700px) {
+  main:has(.revision-overview) {
     height: 100vh;
     min-height: 0;
-  }
-
-  .sidebar {
-    height: 100vh;
-    min-height: 0;
-  }
-
-  main {
-    height: 100vh;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
   }
+
+  main:has(.revision-overview) .welcome-banner {
+    flex-shrink: 0;
+  }
+
+  main:has(.revision-overview) .stats-container,
+  main:has(.revision-overview) .recent-courses,
+  main:has(.revision-overview) .revision-overview {
+    flex-shrink: 0;
+  }
 }
 
-/* ===== TABLETTE ===== */
+/* ÉCRANS PLUS PETITS */
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   .sidebar {
     width: 220px;
-    min-width: 220px;
   }
 
   main {
-    padding: 25px;
+    padding: 20px 24px;
   }
 }
 
-/* ===== MOBILE ===== */
+@media (max-width: 750px) {
+  .stats-container,
+  .recent-courses,
+  .revision-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .course-card,
+  .revision-card {
+    min-height: auto;
+  }
+}
 
 @media (max-width: 650px) {
   .app-container {
@@ -309,7 +410,6 @@ main > p {
 
   .sidebar {
     width: 100%;
-    min-width: 0;
     min-height: auto;
     padding: 20px;
     gap: 18px;
@@ -332,45 +432,20 @@ main > p {
 
   main {
     height: auto;
-    overflow: visible;
-    padding: 25px 18px;
+    padding: 22px 18px;
   }
 
-  main h1 {
-    font-size: 25px;
-  }
-
-  .welcome-banner {
-    padding: 24px 20px;
-  }
-
-  .stats-container {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .course-card {
-    padding: 15px;
+  main > h1 {
+    font-size: 24px;
   }
 }
-
-/* ===== PETITS ECRANS EN HAUTEUR ===== */
-
-@media (max-height: 699px) {
-  html,
-  body {
-    overflow-y: auto;
-  }
-}
-
-/* ===== ACCESSIBILITE ===== */
 
 @media (prefers-reduced-motion: reduce) {
-  .welcome-banner,
-  .welcome-banner button,
   .sidebar-nav a,
+  .welcome-banner button,
   .stat-card,
-  .course-card {
+  .course-card,
+  .revision-card {
     transition: none;
   }
 }
