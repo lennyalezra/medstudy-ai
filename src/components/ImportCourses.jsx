@@ -4,11 +4,13 @@ function ImportCourses(){
     const [fichier, setFichier] = useState(null);
     const [message, setMessage] = useState("");
     const [chargement, setChargement] = useState(false);
+    const [textePDF, setTextePDF] = useState("")
 
 
     function handleFileChange(event){
     const fichierSelectionne = event.target.files[0];
     setMessage("")
+    setTextePDF("")
         if (!fichierSelectionne){
             setFichier(null);
         return;
@@ -46,10 +48,13 @@ function ImportCourses(){
         if(!reponse.ok) {
             throw new Error("Erreur de serveur");
         }
-        return reponse.text()
+        return reponse.json()
 
         })
-        .then(text => setMessage(text))
+        .then(data => {
+            setMessage(data.message);
+            setTextePDF(data.texte);
+})
         .catch(erreur =>{
             setMessage(erreur.message)
         })
@@ -81,6 +86,13 @@ function ImportCourses(){
             {chargement ? "envoi en cours ..." :  "analyser mon cours" }</button>
         {message && (
             <p> {message}</p>            
+        )}
+
+        {textePDF && (
+            <div>
+            <h2> Contenu du cours</h2>
+            <p>{textePDF}</p>
+            </div>
         )}
         
   </div>
