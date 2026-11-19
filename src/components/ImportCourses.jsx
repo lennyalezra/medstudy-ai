@@ -2,6 +2,7 @@ import {useState} from "react";
 
 function ImportCourses(){
     const [fichier, setFichier] = useState(null);
+    const [message, setMessage] = useState("");
     function handleFileChange(event){
     const fichierSelectionne = event.target.files[0];
         if (!fichierSelectionne){
@@ -19,12 +20,32 @@ function ImportCourses(){
         setFichier(fichierSelectionne);
 
     }
+
+   
     function handleAnalyse(){
         if(!fichier){
             alert("Veuillez selectionner un PDF")
             return; 
         }
-        alert("le fichier est pret a etre analyser")
+
+        const formData = new FormData();
+        formData.append("pdf", fichier)
+
+        fetch("http://localhost:3001/api/upload",{
+            method: "POST",
+            body: formData
+        })
+        .then(reponse => {
+        if(!reponse.ok) {
+            throw new Error("Erreur de serveur");
+        }
+        return reponse.text()
+
+        })
+        .then(text => setMessage(text))
+        .catch(erreur =>{
+            setMessage(erreur.message)
+        });
     }
 
     return (
@@ -41,11 +62,14 @@ function ImportCourses(){
          {fichier && (
             <div className="selected-file">
             <p> {fichier.name} </p>
-            <p> {(fichier.size / (1024 * 1024)).toFixed(2)} </p>
+            <p> {(fichier.size / (1024 * 1024)).toFixed(2)} Mo </p>
             </div>
                   )
 }
         <button onClick={handleAnalyse}>analyser mon cours</button>
+        {message && (
+            <p> {message}</p>            
+        )}
         
   </div>
         </main>
