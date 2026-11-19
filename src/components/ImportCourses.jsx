@@ -3,8 +3,12 @@ import {useState} from "react";
 function ImportCourses(){
     const [fichier, setFichier] = useState(null);
     const [message, setMessage] = useState("");
+    const [chargement, setChargement] = useState(false);
+
+
     function handleFileChange(event){
     const fichierSelectionne = event.target.files[0];
+    setMessage("")
         if (!fichierSelectionne){
             setFichier(null);
         return;
@@ -31,6 +35,9 @@ function ImportCourses(){
         const formData = new FormData();
         formData.append("pdf", fichier)
 
+        setChargement(true);
+        console.log("Début de l'envoi");
+
         fetch("http://localhost:3001/api/upload",{
             method: "POST",
             body: formData
@@ -45,6 +52,10 @@ function ImportCourses(){
         .then(text => setMessage(text))
         .catch(erreur =>{
             setMessage(erreur.message)
+        })
+        .finally(() => {
+            console.log("fin de l envoi")
+            setChargement(false)
         });
     }
 
@@ -66,7 +77,8 @@ function ImportCourses(){
             </div>
                   )
 }
-        <button onClick={handleAnalyse}>analyser mon cours</button>
+        <button onClick={handleAnalyse} disabled={chargement}>
+            {chargement ? "envoi en cours ..." :  "analyser mon cours" }</button>
         {message && (
             <p> {message}</p>            
         )}
