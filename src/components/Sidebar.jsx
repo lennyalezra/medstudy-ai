@@ -1,19 +1,47 @@
-import {NavLink} from "react-router-dom";
 
-function  Sidebar() {
+import { NavLink } from "react-router-dom";
+
+function Sidebar() {
     return (
-    <aside className = "sidebar">
-        <h2 className = "sidebar-logo">MedStudy AI</h2>
-        <nav className = "sidebar-nav">
-            <NavLink to="/" end> mon tableau de bord</NavLink>
-            <a href ="#mescours"> mes cours</a>
-            <NavLink to="/importer"> importer mes cours</NavLink>
-            <a href ="#fiches"> fiches de révisions</a>
-            <a href ="#quiz"> Quiz / QCM</a>
-            <a href ="#assistantIA"> Assistant IA</a>
-            <a href ="#statistique"> statistique</a>
+        <aside className="sidebar">
 
-        </nav>
-    </aside>)
+            {/* J'affiche le nom de mon application */}
+            <h2 className="sidebar-logo">MedStudy AI</h2>
+
+            {/* Je relie mes boutons aux différentes pages */}
+            <nav className="sidebar-nav">
+
+                <NavLink to="/" end>
+                    Mon tableau de bord
+                </NavLink>
+
+                <NavLink to="/cours">
+                    Mes cours
+                </NavLink>
+
+                <NavLink to="/importer">
+                    Importer mes cours
+                </NavLink>
+
+                <NavLink to="/fiches">
+                    Fiches de révision
+                </NavLink>
+
+                <NavLink to="/quiz">
+                    Quiz / QCM
+                </NavLink>
+
+                <NavLink to="/statistiques">
+                    Statistiques
+                </NavLink>
+
+                <NavLink to="/parametres">
+                    Paramètres
+                </NavLink>
+
+            </nav>
+        </aside>
+    );
 }
-export default Sidebar
+
+export default Sidebar;

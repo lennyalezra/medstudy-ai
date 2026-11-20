@@ -10,10 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "dotenv": "^18.0.10",
     "lucide-react": "^1.74.0",
+    "pg": "^8.23.1",
+    "pg-hstore": "^2.3.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5"
+    "react-router-dom": "^7.18.5",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

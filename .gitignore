@@ -1,3 +1,7 @@
+# Variables d'environnement et mots de passe
+.env
+**/.env
+
 # Logs
 logs
 *.log
