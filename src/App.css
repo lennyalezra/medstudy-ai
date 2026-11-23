@@ -2016,3 +2016,279 @@ main > p {
     transition: none;
   }
 }
+
+/* Je personnalise le bouton retour */
+.med-retour-fiche {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    margin-bottom: 25px;
+    border: 1px solid #e7d9f4;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #67439a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.med-retour-fiche:hover {
+    background: #f3eafa;
+}
+
+/* Je prépare la carte de lecture */
+.med-fiche-lecture {
+    padding: 35px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Je rends le contenu de la fiche lisible */
+.med-fiche-contenu {
+    color: #33264d;
+    font-size: 16px;
+    line-height: 1.8;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+/* Je personnalise les grands titres */
+.med-fiche-contenu h1 {
+    color: #43286b;
+    font-size: 28px;
+    margin: 0 0 25px;
+}
+
+/* Je personnalise les sous-titres */
+.med-fiche-contenu h2 {
+    color: #68449a;
+    font-size: 22px;
+    margin: 30px 0 15px;
+}
+
+.med-fiche-contenu h3 {
+    color: #7857a3;
+    font-size: 18px;
+    margin: 25px 0 12px;
+}
+
+/* Je sépare mes paragraphes */
+.med-fiche-contenu p {
+    margin-bottom: 16px;
+}
+
+/* Je personnalise mes listes */
+.med-fiche-contenu ul,
+.med-fiche-contenu ol {
+    padding-left: 25px;
+    margin: 15px 0;
+}
+
+.med-fiche-contenu li {
+    margin-bottom: 8px;
+}
+
+/* Je mets les notions importantes en valeur */
+.med-fiche-contenu strong {
+    color: #6944a1;
+    font-weight: 700;
+}
+
+/* Je personnalise les tableaux */
+.med-fiche-contenu table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 14px;
+}
+
+.med-fiche-contenu th {
+    background: #eee5f8;
+    color: #4d3275;
+    font-weight: 700;
+}
+
+.med-fiche-contenu th,
+.med-fiche-contenu td {
+    border: 1px solid #e6dcf1;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.med-fiche-contenu tr:nth-child(even) {
+    background: #faf7fd;
+}
+
+/* Je mets en valeur les remarques */
+.med-fiche-contenu blockquote {
+    margin: 20px 0;
+    padding: 15px 20px;
+    border-left: 4px solid #9870ce;
+    border-radius: 8px;
+    background: #f5effb;
+}
+
+/* Je garde un affichage adapté au mobile */
+@media (max-width: 768px) {
+    .med-fiche-lecture {
+        padding: 20px;
+    }
+
+    .med-fiche-contenu h1 {
+        font-size: 23px;
+    }
+
+    .med-fiche-contenu h2 {
+        font-size: 19px;
+    }
+
+    .med-fiche-contenu table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+/* je personnalise mes boutons */
+.med-fiche-outils,
+.med-edition-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0 25px;
+}
+
+.med-bouton-principal,
+.med-bouton-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.med-bouton-principal {
+    background: #8958c5;
+    color: white;
+}
+
+.med-bouton-principal:hover {
+    background: #7042ab;
+}
+
+.med-bouton-danger {
+    background: #fff0f2;
+    color: #b63d55;
+}
+
+.med-bouton-danger:hover {
+    background: #ffe0e5;
+}
+
+.med-bouton-principal:disabled,
+.med-bouton-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* je personnalise mes formulaires */
+.med-generation-form,
+.med-edition-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 28px;
+    margin: 20px 0 30px;
+    background: white;
+    border: 1px solid #e9def4;
+    border-radius: 20px;
+}
+
+.med-generation-form h2,
+.med-edition-form h2 {
+    color: #493070;
+    margin: 0;
+}
+
+.med-generation-form label,
+.med-edition-form label {
+    color: #57416e;
+    font-weight: 600;
+}
+
+.med-generation-form select,
+.med-edition-form input,
+.med-edition-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 15px;
+    border: 1px solid #dfd2ee;
+    border-radius: 12px;
+    background: #fcfaff;
+    color: #33264d;
+    font: inherit;
+}
+
+.med-edition-form textarea {
+    resize: vertical;
+    min-height: 300px;
+    line-height: 1.6;
+}
+
+.med-generation-form select:focus,
+.med-edition-form input:focus,
+.med-edition-form textarea:focus {
+    outline: 2px solid #b99ae1;
+    outline-offset: 2px;
+}
+
+/* je prépare l'aperçu de ma fiche */
+.med-apercu {
+    padding: 25px;
+    border: 1px solid #e9def4;
+    border-radius: 14px;
+    background: white;
+}
+
+/* je personnalise les messages */
+.med-message {
+    padding: 14px 18px;
+    margin: 15px 0;
+    border-radius: 12px;
+}
+
+.med-message-erreur {
+    background: #fff0f2;
+    color: #a6324b;
+}
+
+.med-message-succes {
+    background: #eef8f1;
+    color: #287044;
+}
+
+/* je garde un affichage adapté au mobile */
+@media (max-width: 768px) {
+    .med-generation-form,
+    .med-edition-form {
+        padding: 18px;
+    }
+
+    .med-fiche-outils,
+    .med-edition-actions {
+        align-items: stretch;
+    }
+
+    .med-fiche-outils button,
+    .med-edition-actions button {
+        flex: 1;
+    }
+}

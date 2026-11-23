@@ -11,12 +11,15 @@
   },
   "dependencies": {
     "dotenv": "^18.0.10",
+    "groq-sdk": "^1.6.0",
     "lucide-react": "^1.74.0",
     "pg": "^8.23.1",
     "pg-hstore": "^2.3.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.5",
+    "remark-gfm": "^4.0.1",
     "sequelize": "^6.37.8"
   },
   "devDependencies": {
