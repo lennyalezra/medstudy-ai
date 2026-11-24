@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -7,9 +6,12 @@ const { genererFiche } = require("./ia");
 const cors = require("cors");
 const multer = require("multer");
 const { PDFParse } = require("pdf-parse");
+const auth = require("./middleware/auth");
 
 const app = express();
+const PORT = 3001;
 
+// Je configure l'importation de mes PDF
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -17,37 +19,57 @@ const upload = multer({
     }
 });
 
-// je configure mon serveur
-app.use(cors());
+// Je configure mon serveur
+app.use(cors({
+    origin: "http://localhost:5173"
+}));
+
 app.use(express.json());
-// Je relie mes nouvelles routes
+
+// Je relie mes routes d'authentification
+app.use("/api/auth", require("./routesAuth"));
+
+// Je vérifie que mon backend fonctionne
+app.get("/", (req, res) => {
+    res.send("Backend MedStudy AI opérationnel");
+});
+
+// Je teste la connexion avec React
+app.get("/api/test", (req, res) => {
+    res.send("Connexion React Express réussie");
+});
+
+// Je relie mes routes de révision
 app.use("/api", require("./routesRevision"));
 
-const PORT = 3001;
+// Je protège mes autres routes privées
+app.use("/api", auth);
 
-// je vérifie que mon backend fonctionne
-app.get("/", (req, res) => {
-    res.send("backend Medstudy AI operationnel");
-});
-
-// je teste la connexion avec react
-app.get("/api/test", (req, res) => {
-    res.send("connexion react Express reussi");
-});
-
-// je garde ma route de test
+// Je garde ma route de test
 app.get("/api/fiche/test", (req, res) => {
-    res.send("Test de generation de fiche");
+    res.send("Test de génération de fiche");
 });
 
-// je récupère un pdf enregistré
+// Je récupère un de mes PDF
 app.get("/api/cours/:id", async (req, res) => {
     try {
+        const coursId = Number(req.params.id);
+
+        if (!Number.isInteger(coursId) || coursId <= 0) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
+
         const resultat = await sequelize.query(
-            `SELECT * FROM cours WHERE id = :id`,
+            `SELECT contenu_pdf
+             FROM cours
+             WHERE id = :id
+             AND utilisateur_id = :utilisateurId`,
             {
                 replacements: {
-                    id: req.params.id
+                    id: coursId,
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
@@ -55,120 +77,159 @@ app.get("/api/cours/:id", async (req, res) => {
         const cours = resultat[0][0];
 
         if (!cours) {
-            return res.status(404).send("Le cours n'existe pas");
+            return res.status(404).json({
+                message: "Cours introuvable"
+            });
         }
 
-        // j'affiche le pdf
+        // J'affiche mon PDF
         res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Cache-Control", "private, no-store");
+
         res.send(cours.contenu_pdf);
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
-        res.status(500).send(
-            "Erreur lors de la recuperation du PDF"
-        );
+        res.status(500).json({
+            message: "Erreur lors de la récupération du PDF"
+        });
     }
 });
 
-// j'importe un pdf depuis react
+// J'importe un PDF depuis React
 app.post("/api/upload", upload.single("pdf"), async (req, res) => {
 
     if (!req.file) {
-        return res.status(400).send("Aucun fichier recu");
+        return res.status(400).json({
+            message: "Aucun fichier reçu"
+        });
     }
 
-    if (req.file.mimetype !== "application/pdf") {
-        return res.status(400).send(
-            "Seuls les fichiers PDF sont autorises"
-        );
+    if (
+        req.file.mimetype !== "application/pdf" ||
+        req.file.buffer.subarray(0, 5).toString() !== "%PDF-"
+    ) {
+        return res.status(400).json({
+            message: "Seuls les fichiers PDF sont autorisés"
+        });
     }
 
     let parser;
 
     try {
-        // je récupère le texte du pdf
+        // Je récupère le texte de mon PDF
         parser = new PDFParse({
             data: req.file.buffer
         });
 
         const resultat = await parser.getText();
 
-        // j'enregistre mon cours
+        // J'enregistre mon cours dans mon compte
         await sequelize.query(
             `INSERT INTO cours
-            (nom, matiere, texte_pdf, fichier_pdf, contenu_pdf)
-            VALUES (:nom, :matiere, :texte, :fichier, :contenu)`,
+             (
+                nom,
+                matiere,
+                texte_pdf,
+                fichier_pdf,
+                contenu_pdf,
+                utilisateur_id
+             )
+             VALUES
+             (
+                :nom,
+                :matiere,
+                :texte,
+                :fichier,
+                :contenu,
+                :utilisateurId
+             )`,
             {
                 replacements: {
-                    nom: req.file.originalname,
+                    nom: req.file.originalname.slice(0, 255),
                     matiere: "Non renseignée",
                     texte: resultat.text,
-                    fichier: req.file.originalname,
-                    contenu: req.file.buffer
+                    fichier: req.file.originalname.slice(0, 255),
+                    contenu: req.file.buffer,
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
 
-        res.json({
-            message: "Votre cours a bien ete enregistre"
+        res.status(201).json({
+            message: "Votre cours a bien été enregistré"
         });
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
-        res.status(500).send(
-            "Erreur pendant l'importation du PDF"
-        );
+        res.status(500).json({
+            message: "Erreur pendant l'importation du PDF"
+        });
 
     } finally {
-        // je libère le lecteur pdf
+        // Je libère mon lecteur PDF
         if (parser) {
-            await parser.destroy();
+            try {
+                await parser.destroy();
+            } catch (erreur) {
+                console.error(erreur);
+            }
         }
     }
 });
 
-// je récupère tous mes cours
+// Je récupère uniquement mes cours
 app.get("/api/cours", async (req, res) => {
     try {
         const resultat = await sequelize.query(
             `SELECT id, nom, matiere
              FROM cours
-             ORDER BY id DESC`
+             WHERE utilisateur_id = :utilisateurId
+             ORDER BY id DESC`,
+            {
+                replacements: {
+                    utilisateurId: req.utilisateur.id
+                }
+            }
         );
 
         res.json(resultat[0]);
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
-        res.status(500).send(
-            "Erreur lors de la recuperation des cours"
-        );
+        res.status(500).json({
+            message: "Erreur lors de la récupération des cours"
+        });
     }
 });
 
-// je génère une fiche avec groq
+// Je génère une fiche avec Groq
 app.post("/api/fiches/generer", async (req, res) => {
     try {
         const { coursId } = req.body || {};
 
-        if (!Number.isInteger(Number(coursId)) ||
-            Number(coursId) <= 0) {
+        if (
+            !Number.isInteger(Number(coursId)) ||
+            Number(coursId) <= 0
+        ) {
             return res.status(400).json({
-                message: "Veuillez selectionner un cours valide"
+                message: "Veuillez sélectionner un cours valide"
             });
         }
 
-        // je récupère le cours
+        // Je vérifie que le cours m'appartient
         const resultat = await sequelize.query(
             `SELECT id, nom, matiere, texte_pdf
              FROM cours
-             WHERE id = :id`,
+             WHERE id = :id
+             AND utilisateur_id = :utilisateurId`,
             {
                 replacements: {
-                    id: Number(coursId)
+                    id: Number(coursId),
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
@@ -187,70 +248,111 @@ app.post("/api/fiches/generer", async (req, res) => {
             });
         }
 
-        // je demande à groq de créer ma fiche
+        // Je demande à Groq de créer ma fiche
         const contenu = await genererFiche(cours.texte_pdf);
-        const titre = "Fiche - " + cours.nom;
 
-        // j'enregistre ma fiche
+        const titre = ("Fiche - " + cours.nom).slice(0, 255);
+
+        // J'enregistre ma fiche
         const enregistrement = await sequelize.query(
             `INSERT INTO fiches
-            (cours_id, titre, matiere, contenu)
-            VALUES (:coursId, :titre, :matiere, :contenu)
-            RETURNING
-                id, cours_id, titre, matiere,
-                contenu, date_creation`,
+             (cours_id, titre, matiere, contenu)
+             SELECT id, :titre, matiere, :contenu
+             FROM cours
+             WHERE id = :coursId
+             AND utilisateur_id = :utilisateurId
+             RETURNING
+                id,
+                cours_id,
+                titre,
+                matiere,
+                contenu,
+                date_creation`,
             {
                 replacements: {
                     coursId: cours.id,
-                    titre: titre,
-                    matiere: cours.matiere,
-                    contenu: contenu
+                    titre,
+                    contenu,
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
 
+        const fiche = enregistrement[0][0];
+
+        if (!fiche) {
+            return res.status(404).json({
+                message: "Cours introuvable"
+            });
+        }
+
         res.status(201).json({
-            message: "Fiche generee et enregistree avec succes",
-            fiche: enregistrement[0][0]
+            message: "Fiche générée et enregistrée avec succès",
+            fiche
         });
 
     } catch (erreur) {
         console.error("Erreur IA :", erreur);
 
         res.status(500).json({
-            message: "Erreur pendant la generation de la fiche"
+            message: "Erreur pendant la génération de la fiche"
         });
     }
 });
 
-// je récupère toutes mes fiches
+// Je récupère toutes mes fiches
 app.get("/api/fiches", async (req, res) => {
     try {
         const resultat = await sequelize.query(
-            `SELECT id, cours_id, titre, matiere, date_creation
-             FROM fiches
-             ORDER BY date_creation DESC, id DESC`
+            `SELECT
+                f.id,
+                f.cours_id,
+                f.titre,
+                f.matiere,
+                f.date_creation
+             FROM fiches f
+             JOIN cours c ON c.id = f.cours_id
+             WHERE c.utilisateur_id = :utilisateurId
+             ORDER BY f.date_creation DESC, f.id DESC`,
+            {
+                replacements: {
+                    utilisateurId: req.utilisateur.id
+                }
+            }
         );
 
         res.json(resultat[0]);
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
         res.status(500).json({
-            message: "Erreur lors de la recuperation des fiches"
+            message: "Erreur lors de la récupération des fiches"
         });
     }
 });
 
-// je récupère une fiche précise
+// Je récupère une de mes fiches
 app.get("/api/fiches/:id", async (req, res) => {
     try {
+        const ficheId = Number(req.params.id);
+
+        if (!Number.isInteger(ficheId) || ficheId <= 0) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
+
         const resultat = await sequelize.query(
-            `SELECT * FROM fiches WHERE id = :id`,
+            `SELECT f.*
+             FROM fiches f
+             JOIN cours c ON c.id = f.cours_id
+             WHERE f.id = :id
+             AND c.utilisateur_id = :utilisateurId`,
             {
                 replacements: {
-                    id: req.params.id
+                    id: ficheId,
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
@@ -266,33 +368,39 @@ app.get("/api/fiches/:id", async (req, res) => {
         res.json(fiche);
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
         res.status(500).json({
-            message: "Erreur lors de la recuperation de la fiche"
+            message: "Erreur lors de la récupération de la fiche"
         });
     }
 });
 
-// je modifie une fiche
+// Je modifie une de mes fiches
 app.put("/api/fiches/:id", async (req, res) => {
     try {
         const ficheId = Number(req.params.id);
-        const { titre, matiere, contenu } = req.body || {};
 
-        // je vérifie les informations
+        const {
+            titre,
+            matiere,
+            contenu
+        } = req.body || {};
+
+        // Je vérifie mon identifiant
         if (!Number.isInteger(ficheId) || ficheId <= 0) {
             return res.status(400).json({
                 message: "Identifiant invalide"
             });
         }
 
+        // Je vérifie mes informations
         if (
             typeof titre !== "string" ||
             !titre.trim() ||
             titre.trim().length > 255 ||
             typeof matiere !== "string" ||
-            matiere.length > 255 ||
+            matiere.trim().length > 255 ||
             typeof contenu !== "string" ||
             !contenu.trim()
         ) {
@@ -301,22 +409,32 @@ app.put("/api/fiches/:id", async (req, res) => {
             });
         }
 
-        // j'enregistre les modifications
+        // Je modifie uniquement une fiche qui m'appartient
         const resultat = await sequelize.query(
             `UPDATE fiches
              SET titre = :titre,
                  matiere = :matiere,
                  contenu = :contenu
              WHERE id = :id
+             AND cours_id IN (
+                 SELECT id
+                 FROM cours
+                 WHERE utilisateur_id = :utilisateurId
+             )
              RETURNING
-                id, cours_id, titre, matiere,
-                contenu, date_creation`,
+                id,
+                cours_id,
+                titre,
+                matiere,
+                contenu,
+                date_creation`,
             {
                 replacements: {
                     id: ficheId,
                     titre: titre.trim(),
                     matiere: matiere.trim() || "Non renseignée",
-                    contenu: contenu.trim()
+                    contenu: contenu.trim(),
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
@@ -330,12 +448,12 @@ app.put("/api/fiches/:id", async (req, res) => {
         }
 
         res.json({
-            message: "Fiche modifiee avec succes",
-            fiche: fiche
+            message: "Fiche modifiée avec succès",
+            fiche
         });
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
         res.status(500).json({
             message: "Erreur lors de la modification de la fiche"
@@ -343,7 +461,7 @@ app.put("/api/fiches/:id", async (req, res) => {
     }
 });
 
-// je supprime une fiche
+// Je supprime une de mes fiches
 app.delete("/api/fiches/:id", async (req, res) => {
     try {
         const ficheId = Number(req.params.id);
@@ -354,14 +472,20 @@ app.delete("/api/fiches/:id", async (req, res) => {
             });
         }
 
-        // je supprime la fiche dans postgresql
+        // Je vérifie que la fiche m'appartient
         const resultat = await sequelize.query(
             `DELETE FROM fiches
              WHERE id = :id
+             AND cours_id IN (
+                 SELECT id
+                 FROM cours
+                 WHERE utilisateur_id = :utilisateurId
+             )
              RETURNING id`,
             {
                 replacements: {
-                    id: ficheId
+                    id: ficheId,
+                    utilisateurId: req.utilisateur.id
                 }
             }
         );
@@ -373,11 +497,11 @@ app.delete("/api/fiches/:id", async (req, res) => {
         }
 
         res.json({
-            message: "Fiche supprimee avec succes"
+            message: "Fiche supprimée avec succès"
         });
 
     } catch (erreur) {
-        console.log(erreur);
+        console.error(erreur);
 
         res.status(500).json({
             message: "Erreur lors de la suppression de la fiche"
@@ -385,30 +509,66 @@ app.delete("/api/fiches/:id", async (req, res) => {
     }
 });
 
-// je gère les pdf trop volumineux
+// Je gère les routes inexistantes
+app.use((req, res) => {
+    res.status(404).json({
+        message: "Route introuvable"
+    });
+});
+
+// Je gère les erreurs de mon serveur
 app.use((err, req, res, next) => {
+
     if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(413).send(
-            "Le fichier a depasse la limite de 10 Mo"
-        );
+        return res.status(413).json({
+            message: "Le fichier a dépassé la limite de 10 Mo"
+        });
     }
 
-    next(err);
-});
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({
+            message: "Erreur pendant l'importation du fichier"
+        });
+    }
 
-// je vérifie la connexion à postgresql
-sequelize.authenticate()
-    .then(() => {
-        console.log("Connexion PostgreSQL réussie !");
-    })
-    .catch((erreur) => {
-        console.error(
-            "Erreur de connexion PostgreSQL :",
-            erreur
-        );
+    if (err.type === "entity.parse.failed") {
+        return res.status(400).json({
+            message: "Données JSON invalides"
+        });
+    }
+
+    console.error(err);
+
+    res.status(500).json({
+        message: "Une erreur est survenue"
     });
-
-// je démarre mon serveur
-app.listen(PORT, () => {
-    console.log("Serveur démarré");
 });
+
+// Je vérifie ma connexion à PostgreSQL
+async function demarrerServeur() {
+    try {
+        if (!process.env.JWT_SECRET) {
+            throw new Error(
+                "JWT_SECRET manquant dans le fichier .env"
+            );
+        }
+
+        await sequelize.authenticate();
+
+        console.log("Connexion PostgreSQL réussie !");
+
+        // Je démarre mon serveur
+        app.listen(PORT, () => {
+            console.log(
+                `Serveur démarré sur http://localhost:${PORT}`
+            );
+        });
+
+    } catch (erreur) {
+        console.error("Erreur de démarrage :", erreur);
+
+        process.exit(1);
+    }
+}
+
+demarrerServeur();

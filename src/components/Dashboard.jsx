@@ -1,26 +1,67 @@
+import { useNavigate } from "react-router-dom";
+import { Upload } from "lucide-react";
+
+import { useAuth } from "../context/AuthContext";
+
 import StatCards from "./StatCards";
 import RecentCourses from "./RecentCourses";
-import { useNavigate } from "react-router-dom";
 import RevisionOverview from "./RevisionOverview";
 
+function Dashboard() {
 
-function Dashboard(){
     const navigate = useNavigate();
-    return(
-        <main>
-            <h1>Bonjour, bienvenue sur MedStudy AI</h1>
-            <p> Prête pour une nouvelle session de révisions ?</p>
+    const { utilisateur } = useAuth();
+
+    // Je mets une majuscule à mon prénom
+    const prenom = utilisateur?.prenom
+        ? utilisateur.prenom.charAt(0).toUpperCase() +
+          utilisateur.prenom.slice(1)
+        : "";
+
+    return (
+        <main className="dashboard">
+
+            <h1>
+                Bonjour{prenom ? ` ${prenom}` : ""}, bienvenue sur MedStudy AI
+            </h1>
+
+            <p>
+                Prête pour une nouvelle session de révisions ?
+            </p>
+
+            {/* J'affiche ma bannière */}
             <section className="welcome-banner">
 
-                <h2>Tous les cours, organisés intelligemment</h2> 
-                <p>importe tes cours de médecine et laisse l'IA créer tes fiches de révisions.</p>
-                <button  onClick= {() => navigate("/importer")}> importer un cours </button>
+                <h2>
+                    Révise plus intelligemment
+                </h2>
+
+                <p>
+                    Transforme tes cours en fiches de révision,
+                    QCM et flashcards grâce à l'intelligence artificielle.
+                </p>
+
+                <button onClick={() => navigate("/importer")}>
+
+                    <Upload size={19} />
+
+                    Importer un cours
+
+                </button>
+
             </section>
-            <StatCards/>
-            <RecentCourses/>
-            <RevisionOverview/>
+
+            {/* J'affiche mes statistiques */}
+            <StatCards />
+
+            {/* J'affiche mes derniers cours */}
+            <RecentCourses />
+
+            {/* J'affiche ma progression */}
+            <RevisionOverview />
 
         </main>
-    )
+    );
 }
-export default Dashboard; 
+
+export default Dashboard;

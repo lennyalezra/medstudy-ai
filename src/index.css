@@ -1,111 +1,340 @@
+/* Je définis les couleurs de mon application */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #302a42;
+    background: #faf9fc;
     font-size: 16px;
-  }
+    font-weight: 400;
+    line-height: 1.5;
+    color-scheme: light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* Je réinitialise mes éléments */
+* {
+    box-sizing: border-box;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  margin: 0;
+    min-width: 320px;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+    max-width: none;
+    border: none;
 }
 
+/* Je personnalise mes textes */
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4 {
+    line-height: 1.3;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
 p {
-  margin: 0;
+    margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+button,
+input,
+select,
+textarea {
+    font: inherit;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+img {
+    max-width: 100%;
+}
+
+a {
+    color: inherit;
+}
+
+/* Je garde mon menu et mon contenu côte à côte */
+#root .app-container {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Je garde mon menu visible */
+.app-container > .sidebar {
+    position: sticky;
+    top: 0;
+    width: 255px;
+    height: 100vh;
+    min-height: 0;
+    flex-shrink: 0;
+    overflow-y: auto;
+    text-align: left;
+}
+
+/* Je laisse la place à mes différentes pages */
+.app-container > .main-content {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    min-height: 100vh;
+    padding: 0;
+}
+
+.main-content > main {
+    width: 100%;
+    min-width: 0;
+    padding: 25px 36px;
+}
+
+/* Je personnalise le logo */
+.sidebar .sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    padding: 8px 0;
+    color: #58447e;
+}
+
+.sidebar-logo h2 {
+    margin: 0;
+    font-size: 23px;
+    font-weight: 750;
+}
+
+/* Je sépare mes icônes et mes textes */
+.sidebar .sidebar-nav a.sidebar-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 13px 15px;
+    text-align: left;
+}
+
+.sidebar-link svg {
+    flex-shrink: 0;
+}
+
+/* Je place mon compte en bas du menu */
+.sidebar .sidebar-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #e3d9ef;
+}
+
+.sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #e8def3;
+    border-radius: 13px;
+    background: #faf7ff;
+}
+
+.sidebar-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #e5d8f6;
+    color: #7454a5;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.sidebar-profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-profile-info strong {
+    display: block;
+    color: #493760;
+    font-size: 14px;
+    text-transform: capitalize;
+    overflow-wrap: anywhere;
+}
+
+.sidebar-profile-info p {
+    margin-top: 3px;
+    color: #887b99;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+/* Je personnalise mon bouton de déconnexion */
+.sidebar-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddccef;
+    border-radius: 11px;
+    background: white;
+    color: #7654a6;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.sidebar-logout:hover {
+    background: #e9dff7;
+}
+
+/* Je personnalise mon tableau de bord */
+.main-content > .dashboard {
+    padding: 25px 36px;
+}
+
+.dashboard > h1 {
+    margin: 0 0 6px;
+    color: #30283f;
+    font-size: clamp(23px, 2vw, 29px);
+    font-weight: 750;
+    letter-spacing: -0.7px;
+    text-align: center;
+}
+
+.dashboard > p {
+    color: #82798f;
+    font-size: 14px;
+    text-align: center;
+}
+
+.dashboard .welcome-banner button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dashboard .recent-courses > .med-empty {
+    grid-column: 1 / -1;
+    min-height: 150px;
+}
+
+/* J'adapte mon application aux petits écrans */
+@media (max-width: 1000px) {
+    .app-container > .sidebar {
+        width: 225px;
+        padding: 20px 12px;
+    }
+
+    .main-content > main,
+    .main-content > .dashboard {
+        padding: 22px;
+    }
+
+    .sidebar-logo h2 {
+        font-size: 20px;
+    }
+}
+
+/* J'adapte mon application au téléphone */
+@media (max-width: 768px) {
+    #root .app-container {
+        flex-direction: column;
+    }
+
+    .app-container > .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        padding: 15px;
+        border-right: none;
+        border-bottom: 1px solid #e3d9ef;
+        gap: 15px;
+    }
+
+    .sidebar .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .sidebar .sidebar-nav a.sidebar-link {
+        padding: 10px;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .sidebar .sidebar-footer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-top: 12px;
+    }
+
+    .sidebar-profile {
+        flex: 1;
+        margin: 0;
+    }
+
+    .sidebar-logout {
+        width: auto;
+    }
+
+    .app-container > .main-content {
+        width: 100%;
+        min-height: auto;
+    }
+
+    .main-content > main,
+    .main-content > .dashboard {
+        padding: 18px 14px;
+    }
+
+    .dashboard > h1 {
+        font-size: 23px;
+    }
+
+    .dashboard .stats-container {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard .recent-courses,
+    .dashboard .revision-overview {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .sidebar .sidebar-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sidebar-logout {
+        width: 100%;
+    }
 }

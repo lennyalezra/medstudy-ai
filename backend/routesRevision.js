@@ -1,11 +1,16 @@
 const express = require("express");
 const sequelize = require("./db");
+const auth = require("./middleware/auth");
+
 const {
     genererQCM,
     genererFlashcards
 } = require("./ia");
 
 const router = express.Router();
+
+// Je protège mes routes
+router.use(auth);
 
 // Je simplifie mes requêtes SQL
 async function requete(sql, replacements = {}, transaction) {
@@ -17,11 +22,14 @@ async function requete(sql, replacements = {}, transaction) {
     return resultat;
 }
 
-// Je récupère un cours
-async function recupererCours(id) {
+// Je récupère un cours qui m'appartient
+async function recupererCours(id, utilisateurId) {
     const cours = await requete(
-        "SELECT * FROM cours WHERE id = :id",
-        { id }
+        `SELECT id, nom, matiere, texte_pdf
+         FROM cours
+         WHERE id = :id
+         AND utilisateur_id = :utilisateurId`,
+        { id, utilisateurId }
     );
 
     return cours[0];
@@ -35,7 +43,8 @@ function idValide(id) {
 // Je génère un QCM
 router.post("/qcm/generer", async (req, res) => {
     try {
-        const { coursId, niveau, nombre } = req.body;
+        const { coursId, niveau, nombre } = req.body || {};
+        const utilisateurId = req.utilisateur.id;
 
         if (
             !idValide(coursId) ||
@@ -47,11 +56,21 @@ router.post("/qcm/generer", async (req, res) => {
             });
         }
 
-        const cours = await recupererCours(coursId);
+        // Je vérifie que le cours m'appartient
+        const cours = await recupererCours(
+            coursId,
+            utilisateurId
+        );
 
         if (!cours) {
             return res.status(404).json({
                 message: "Cours introuvable"
+            });
+        }
+
+        if (!cours.texte_pdf || !cours.texte_pdf.trim()) {
+            return res.status(400).json({
+                message: "Ce cours ne contient aucun texte exploitable"
             });
         }
 
@@ -61,51 +80,86 @@ router.post("/qcm/generer", async (req, res) => {
             Number(nombre)
         );
 
+        // J'enregistre mon QCM
         const resultat = await requete(
             `INSERT INTO qcm
-            (cours_id, titre, niveau, questions)
-            VALUES (:coursId, :titre, :niveau, CAST(:questions AS JSONB))
-            RETURNING *`,
+             (cours_id, titre, niveau, questions)
+             SELECT id, :titre, :niveau,
+                    CAST(:questions AS JSONB)
+             FROM cours
+             WHERE id = :coursId
+             AND utilisateur_id = :utilisateurId
+             RETURNING *`,
             {
                 coursId,
+                utilisateurId,
                 titre: ("QCM - " + cours.nom).slice(0, 255),
                 niveau,
                 questions: JSON.stringify(questions)
             }
         );
 
+        if (!resultat.length) {
+            return res.status(404).json({
+                message: "Cours introuvable"
+            });
+        }
+
         res.status(201).json(resultat[0]);
 
     } catch (erreur) {
         console.error(erreur);
+
         res.status(500).json({
             message: "Erreur pendant la génération du QCM"
         });
     }
 });
 
-// Je récupère tous mes QCM
+// Je récupère uniquement mes QCM
 router.get("/qcm", async (req, res) => {
     try {
         const resultat = await requete(
-            "SELECT * FROM qcm ORDER BY id DESC"
+            `SELECT q.*
+             FROM qcm q
+             JOIN cours c ON c.id = q.cours_id
+             WHERE c.utilisateur_id = :utilisateurId
+             ORDER BY q.id DESC`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Impossible de récupérer les QCM"
         });
     }
 });
 
-// Je récupère un QCM
+// Je récupère un de mes QCM
 router.get("/qcm/:id", async (req, res) => {
     try {
+        if (!idValide(req.params.id)) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
+
         const resultat = await requete(
-            "SELECT * FROM qcm WHERE id = :id",
-            { id: req.params.id }
+            `SELECT q.*
+             FROM qcm q
+             JOIN cours c ON c.id = q.cours_id
+             WHERE q.id = :id
+             AND c.utilisateur_id = :utilisateurId`,
+            {
+                id: req.params.id,
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         if (!resultat.length) {
@@ -117,6 +171,8 @@ router.get("/qcm/:id", async (req, res) => {
         res.json(resultat[0]);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de récupération"
         });
@@ -126,11 +182,25 @@ router.get("/qcm/:id", async (req, res) => {
 // Je calcule et enregistre mon résultat
 router.post("/qcm/:id/terminer", async (req, res) => {
     try {
-        const { reponses } = req.body;
+        const { reponses } = req.body || {};
+        const utilisateurId = req.utilisateur.id;
+
+        if (!idValide(req.params.id)) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
 
         const resultat = await requete(
-            "SELECT * FROM qcm WHERE id = :id",
-            { id: req.params.id }
+            `SELECT q.*
+             FROM qcm q
+             JOIN cours c ON c.id = q.cours_id
+             WHERE q.id = :id
+             AND c.utilisateur_id = :utilisateurId`,
+            {
+                id: req.params.id,
+                utilisateurId
+            }
         );
 
         const qcm = resultat[0];
@@ -141,7 +211,10 @@ router.post("/qcm/:id/terminer", async (req, res) => {
             });
         }
 
+        // Je vérifie mes réponses
         if (
+            !Array.isArray(qcm.questions) ||
+            qcm.questions.length === 0 ||
             !Array.isArray(reponses) ||
             reponses.length !== qcm.questions.length ||
             !reponses.every(r =>
@@ -153,6 +226,7 @@ router.post("/qcm/:id/terminer", async (req, res) => {
             });
         }
 
+        // Je calcule mon score
         const score = qcm.questions.reduce(
             (total, question, index) =>
                 total + (
@@ -164,18 +238,23 @@ router.post("/qcm/:id/terminer", async (req, res) => {
         const total = qcm.questions.length;
         const pourcentage = Math.round(score / total * 100);
 
+        // J'enregistre mon résultat et ma révision
         const enregistrement = await sequelize.transaction(
             async transaction => {
 
                 const donnees = await requete(
                     `INSERT INTO resultats_qcm
-                    (qcm_id, score, total, pourcentage, reponses)
-                    VALUES
-                    (:id, :score, :total, :pourcentage,
-                    CAST(:reponses AS JSONB))
-                    RETURNING *`,
+                     (qcm_id, score, total, pourcentage, reponses)
+                     SELECT q.id, :score, :total, :pourcentage,
+                            CAST(:reponses AS JSONB)
+                     FROM qcm q
+                     JOIN cours c ON c.id = q.cours_id
+                     WHERE q.id = :id
+                     AND c.utilisateur_id = :utilisateurId
+                     RETURNING *`,
                     {
                         id: qcm.id,
+                        utilisateurId,
                         score,
                         total,
                         pourcentage,
@@ -184,17 +263,29 @@ router.post("/qcm/:id/terminer", async (req, res) => {
                     transaction
                 );
 
+                if (!donnees.length) {
+                    return null;
+                }
+
                 await requete(
                     `INSERT INTO revisions
-                    (cours_id, type_revision)
-                    VALUES (:coursId, 'qcm')`,
-                    { coursId: qcm.cours_id },
+                     (cours_id, type_revision)
+                     VALUES (:coursId, 'qcm')`,
+                    {
+                        coursId: qcm.cours_id
+                    },
                     transaction
                 );
 
                 return donnees[0];
             }
         );
+
+        if (!enregistrement) {
+            return res.status(404).json({
+                message: "QCM introuvable"
+            });
+        }
 
         res.json(enregistrement);
 
@@ -214,24 +305,47 @@ router.get("/resultats-qcm", async (req, res) => {
             `SELECT r.*, q.titre, q.niveau, q.cours_id
              FROM resultats_qcm r
              JOIN qcm q ON q.id = r.qcm_id
-             ORDER BY r.date_creation DESC`
+             JOIN cours c ON c.id = q.cours_id
+             WHERE c.utilisateur_id = :utilisateurId
+             ORDER BY r.date_creation DESC`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de récupération des résultats"
         });
     }
 });
 
-// Je supprime un QCM
+// Je supprime un de mes QCM
 router.delete("/qcm/:id", async (req, res) => {
     try {
+        if (!idValide(req.params.id)) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
+
         const resultat = await requete(
-            "DELETE FROM qcm WHERE id = :id RETURNING id",
-            { id: req.params.id }
+            `DELETE FROM qcm
+             WHERE id = :id
+             AND cours_id IN (
+                 SELECT id
+                 FROM cours
+                 WHERE utilisateur_id = :utilisateurId
+             )
+             RETURNING id`,
+            {
+                id: req.params.id,
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         if (!resultat.length) {
@@ -240,9 +354,13 @@ router.delete("/qcm/:id", async (req, res) => {
             });
         }
 
-        res.json({ message: "QCM supprimé" });
+        res.json({
+            message: "QCM supprimé"
+        });
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de suppression"
         });
@@ -252,7 +370,8 @@ router.delete("/qcm/:id", async (req, res) => {
 // Je génère mes flashcards
 router.post("/flashcards/generer", async (req, res) => {
     try {
-        const { coursId, nombre } = req.body;
+        const { coursId, nombre } = req.body || {};
+        const utilisateurId = req.utilisateur.id;
 
         if (
             !idValide(coursId) ||
@@ -263,11 +382,21 @@ router.post("/flashcards/generer", async (req, res) => {
             });
         }
 
-        const cours = await recupererCours(coursId);
+        // Je vérifie que le cours m'appartient
+        const cours = await recupererCours(
+            coursId,
+            utilisateurId
+        );
 
         if (!cours) {
             return res.status(404).json({
                 message: "Cours introuvable"
+            });
+        }
+
+        if (!cours.texte_pdf || !cours.texte_pdf.trim()) {
+            return res.status(400).json({
+                message: "Ce cours ne contient aucun texte exploitable"
             });
         }
 
@@ -276,6 +405,7 @@ router.post("/flashcards/generer", async (req, res) => {
             Number(nombre)
         );
 
+        // J'enregistre mes nouvelles cartes
         const flashcards = await sequelize.transaction(
             async transaction => {
                 const nouvellesCartes = [];
@@ -283,16 +413,24 @@ router.post("/flashcards/generer", async (req, res) => {
                 for (const carte of cartes) {
                     const resultat = await requete(
                         `INSERT INTO flashcards
-                        (cours_id, question, reponse)
-                        VALUES (:coursId, :question, :reponse)
-                        RETURNING *`,
+                         (cours_id, question, reponse)
+                         SELECT id, :question, :reponse
+                         FROM cours
+                         WHERE id = :coursId
+                         AND utilisateur_id = :utilisateurId
+                         RETURNING *`,
                         {
                             coursId,
+                            utilisateurId,
                             question: carte.question,
                             reponse: carte.reponse
                         },
                         transaction
                     );
+
+                    if (!resultat.length) {
+                        throw new Error("Cours introuvable");
+                    }
 
                     nouvellesCartes.push(resultat[0]);
                 }
@@ -312,19 +450,25 @@ router.post("/flashcards/generer", async (req, res) => {
     }
 });
 
-// Je récupère mes flashcards
+// Je récupère uniquement mes flashcards
 router.get("/flashcards", async (req, res) => {
     try {
         const resultat = await requete(
             `SELECT f.*, c.nom AS cours_nom
              FROM flashcards f
              JOIN cours c ON c.id = f.cours_id
-             ORDER BY f.id DESC`
+             WHERE c.utilisateur_id = :utilisateurId
+             ORDER BY f.id DESC`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de récupération des flashcards"
         });
@@ -334,9 +478,13 @@ router.get("/flashcards", async (req, res) => {
 // Je mets à jour ma mémorisation
 router.patch("/flashcards/:id", async (req, res) => {
     try {
-        const { maitrisee } = req.body;
+        const { maitrisee } = req.body || {};
+        const utilisateurId = req.utilisateur.id;
 
-        if (typeof maitrisee !== "boolean") {
+        if (
+            !idValide(req.params.id) ||
+            typeof maitrisee !== "boolean"
+        ) {
             return res.status(400).json({
                 message: "Valeur invalide"
             });
@@ -345,14 +493,21 @@ router.patch("/flashcards/:id", async (req, res) => {
         const carte = await sequelize.transaction(
             async transaction => {
 
+                // Je modifie uniquement une de mes cartes
                 const resultat = await requete(
                     `UPDATE flashcards
                      SET maitrisee = :maitrisee,
                          derniere_revision = NOW()
                      WHERE id = :id
+                     AND cours_id IN (
+                         SELECT id
+                         FROM cours
+                         WHERE utilisateur_id = :utilisateurId
+                     )
                      RETURNING *`,
                     {
                         id: req.params.id,
+                        utilisateurId,
                         maitrisee
                     },
                     transaction
@@ -362,11 +517,14 @@ router.patch("/flashcards/:id", async (req, res) => {
                     return null;
                 }
 
+                // J'enregistre mon activité
                 await requete(
                     `INSERT INTO revisions
-                    (cours_id, type_revision)
-                    VALUES (:coursId, 'flashcard')`,
-                    { coursId: resultat[0].cours_id },
+                     (cours_id, type_revision)
+                     VALUES (:coursId, 'flashcard')`,
+                    {
+                        coursId: resultat[0].cours_id
+                    },
                     transaction
                 );
 
@@ -383,18 +541,36 @@ router.patch("/flashcards/:id", async (req, res) => {
         res.json(carte);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de modification"
         });
     }
 });
 
-// Je supprime une flashcard
+// Je supprime une de mes flashcards
 router.delete("/flashcards/:id", async (req, res) => {
     try {
+        if (!idValide(req.params.id)) {
+            return res.status(400).json({
+                message: "Identifiant invalide"
+            });
+        }
+
         const resultat = await requete(
-            "DELETE FROM flashcards WHERE id = :id RETURNING id",
-            { id: req.params.id }
+            `DELETE FROM flashcards
+             WHERE id = :id
+             AND cours_id IN (
+                 SELECT id
+                 FROM cours
+                 WHERE utilisateur_id = :utilisateurId
+             )
+             RETURNING id`,
+            {
+                id: req.params.id,
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         if (!resultat.length) {
@@ -403,35 +579,93 @@ router.delete("/flashcards/:id", async (req, res) => {
             });
         }
 
-        res.json({ message: "Flashcard supprimée" });
+        res.json({
+            message: "Flashcard supprimée"
+        });
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de suppression"
         });
     }
 });
 
-// Je récupère mes statistiques générales
+// Je récupère mes statistiques personnelles
 router.get("/statistiques", async (req, res) => {
     try {
         const resultat = await requete(
-            `SELECT
-                (SELECT COUNT(*) FROM cours)::int AS cours,
-                (SELECT COUNT(*) FROM fiches)::int AS fiches,
-                (SELECT COUNT(*) FROM qcm)::int AS qcm,
-                (SELECT COUNT(*) FROM resultats_qcm)::int AS quiz_termines,
-                (SELECT COUNT(*) FROM flashcards)::int AS flashcards,
-                (SELECT COUNT(*) FROM flashcards
+            `WITH mes_cours AS (
+                SELECT id
+                FROM cours
+                WHERE utilisateur_id = :utilisateurId
+             ),
+
+             mes_fiches AS (
+                SELECT f.*
+                FROM fiches f
+                JOIN mes_cours c ON c.id = f.cours_id
+             ),
+
+             mes_qcm AS (
+                SELECT q.*
+                FROM qcm q
+                JOIN mes_cours c ON c.id = q.cours_id
+             ),
+
+             mes_resultats AS (
+                SELECT r.*
+                FROM resultats_qcm r
+                JOIN mes_qcm q ON q.id = r.qcm_id
+             ),
+
+             mes_flashcards AS (
+                SELECT f.*
+                FROM flashcards f
+                JOIN mes_cours c ON c.id = f.cours_id
+             ),
+
+             mes_revisions AS (
+                SELECT r.*
+                FROM revisions r
+                JOIN mes_cours c ON c.id = r.cours_id
+             )
+
+             SELECT
+                (SELECT COUNT(*)
+                 FROM mes_cours)::int AS cours,
+
+                (SELECT COUNT(*)
+                 FROM mes_fiches)::int AS fiches,
+
+                (SELECT COUNT(*)
+                 FROM mes_qcm)::int AS qcm,
+
+                (SELECT COUNT(*)
+                 FROM mes_resultats)::int AS quiz_termines,
+
+                (SELECT COUNT(*)
+                 FROM mes_flashcards)::int AS flashcards,
+
+                (SELECT COUNT(*)
+                 FROM mes_flashcards
                  WHERE maitrisee = TRUE)::int AS cartes_maitrisees,
+
                 (SELECT COALESCE(SUM(score), 0)
-                 FROM resultats_qcm)::int AS bonnes_reponses,
+                 FROM mes_resultats)::int AS bonnes_reponses,
+
                 (SELECT COALESCE(SUM(total), 0)
-                 FROM resultats_qcm)::int AS questions,
+                 FROM mes_resultats)::int AS questions,
+
                 (SELECT COALESCE(ROUND(AVG(pourcentage)), 0)
-                 FROM resultats_qcm)::int AS moyenne,
+                 FROM mes_resultats)::int AS moyenne,
+
                 (SELECT COUNT(DISTINCT cours_id)
-                 FROM revisions)::int AS cours_revises`
+                 FROM mes_revisions)::int AS cours_revises`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat[0]);
@@ -451,32 +685,42 @@ router.get("/progression", async (req, res) => {
         const resultat = await requete(
             `SELECT c.id, c.nom, c.matiere,
 
-            (SELECT COUNT(*) FROM fiches f
-             WHERE f.cours_id = c.id)::int AS fiches,
+             (SELECT COUNT(*)
+              FROM fiches f
+              WHERE f.cours_id = c.id)::int AS fiches,
 
-            (SELECT COUNT(*) FROM flashcards f
-             WHERE f.cours_id = c.id)::int AS flashcards,
+             (SELECT COUNT(*)
+              FROM flashcards f
+              WHERE f.cours_id = c.id)::int AS flashcards,
 
-            (SELECT COUNT(*) FROM flashcards f
-             WHERE f.cours_id = c.id
-             AND f.maitrisee = TRUE)::int AS maitrisees,
+             (SELECT COUNT(*)
+              FROM flashcards f
+              WHERE f.cours_id = c.id
+              AND f.maitrisee = TRUE)::int AS maitrisees,
 
-            (SELECT COUNT(*) FROM resultats_qcm r
-             JOIN qcm q ON q.id = r.qcm_id
-             WHERE q.cours_id = c.id)::int AS quiz_termines,
+             (SELECT COUNT(*)
+              FROM resultats_qcm r
+              JOIN qcm q ON q.id = r.qcm_id
+              WHERE q.cours_id = c.id)::int AS quiz_termines,
 
-            (SELECT ROUND(AVG(r.pourcentage))::int
-             FROM resultats_qcm r
-             JOIN qcm q ON q.id = r.qcm_id
-             WHERE q.cours_id = c.id) AS moyenne
+             (SELECT ROUND(AVG(r.pourcentage))::int
+              FROM resultats_qcm r
+              JOIN qcm q ON q.id = r.qcm_id
+              WHERE q.cours_id = c.id) AS moyenne
 
-            FROM cours c
-            ORDER BY c.id DESC`
+             FROM cours c
+             WHERE c.utilisateur_id = :utilisateurId
+             ORDER BY c.id DESC`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de récupération de la progression"
         });
@@ -490,13 +734,19 @@ router.get("/revisions", async (req, res) => {
             `SELECT r.*, c.nom AS cours_nom
              FROM revisions r
              JOIN cours c ON c.id = r.cours_id
+             WHERE c.utilisateur_id = :utilisateurId
              ORDER BY r.date_revision DESC, r.id DESC
-             LIMIT 30`
+             LIMIT 30`,
+            {
+                utilisateurId: req.utilisateur.id
+            }
         );
 
         res.json(resultat);
 
     } catch (erreur) {
+        console.error(erreur);
+
         res.status(500).json({
             message: "Erreur de récupération des révisions"
         });

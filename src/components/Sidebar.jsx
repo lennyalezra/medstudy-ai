@@ -1,49 +1,150 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+import {
+    BookOpen,
+    LayoutDashboard,
+    FolderOpen,
+    Upload,
+    FileText,
+    Brain,
+    Layers,
+    BarChart3,
+    Settings,
+    LogOut
+} from "lucide-react";
 
 function Sidebar() {
+
+    const navigate = useNavigate();
+    const { utilisateur, deconnexion } = useAuth();
+
+    // Je prépare mes liens de navigation
+    const liens = [
+        {
+            adresse: "/",
+            titre: "Tableau de bord",
+            Icone: LayoutDashboard
+        },
+        {
+            adresse: "/cours",
+            titre: "Mes cours",
+            Icone: FolderOpen
+        },
+        {
+            adresse: "/importer",
+            titre: "Importer un cours",
+            Icone: Upload
+        },
+        {
+            adresse: "/fiches",
+            titre: "Fiches de révision",
+            Icone: FileText
+        },
+        {
+            adresse: "/quiz",
+            titre: "Quiz / QCM",
+            Icone: Brain
+        },
+        {
+            adresse: "/flashcards",
+            titre: "Mes flashcards",
+            Icone: Layers
+        },
+        {
+            adresse: "/statistiques",
+            titre: "Statistiques",
+            Icone: BarChart3
+        },
+        {
+            adresse: "/parametres",
+            titre: "Paramètres",
+            Icone: Settings
+        }
+    ];
+
+    // Je récupère mes initiales
+    const initiales = (
+        (utilisateur?.prenom?.charAt(0) || "") +
+        (utilisateur?.nom?.charAt(0) || "")
+    ).toUpperCase();
+
+    // Je ferme ma session
+    function handleDeconnexion() {
+        deconnexion();
+        navigate("/connexion", { replace: true });
+    }
 
     return (
         <aside className="sidebar">
 
-            {/* J'affiche le nom de mon application */}
-            <h2 className="sidebar-logo">MedStudy AI</h2>
+            <div className="sidebar-logo">
 
-            {/* Je relie mes boutons aux différentes pages */}
+                <BookOpen size={30} />
+
+                <h2>MedStudy AI</h2>
+
+            </div>
+
+            {/* J'affiche mes liens */}
             <nav className="sidebar-nav">
 
-                <NavLink to="/" end>
-                    Mon tableau de bord
-                </NavLink>
+                {liens.map(({ adresse, titre, Icone }) => (
 
-                <NavLink to="/cours">
-                    Mes cours
-                </NavLink>
+                    <NavLink
+                        key={adresse}
+                        to={adresse}
+                        end={adresse === "/"}
+                        className={({ isActive }) =>
+                            isActive
+                                ? "sidebar-link active"
+                                : "sidebar-link"
+                        }
+                    >
 
-                <NavLink to="/importer">
-                    Importer mes cours
-                </NavLink>
+                        <Icone size={20} />
 
-                <NavLink to="/fiches">
-                    Fiches de révision
-                </NavLink>
+                        <span>{titre}</span>
 
-                <NavLink to="/quiz">
-                    Quiz / QCM
-                </NavLink>
+                    </NavLink>
 
-                <NavLink to="/flashcards">
-                    Mes flashcards
-                </NavLink>
-
-                <NavLink to="/statistiques">
-                    Statistiques
-                </NavLink>
-
-                <NavLink to="/parametres">
-                    Paramètres
-                </NavLink>
+                ))}
 
             </nav>
+
+            {/* J'affiche mon compte */}
+            <div className="sidebar-footer">
+
+                <div className="sidebar-profile">
+
+                    <div className="sidebar-avatar">
+                        {initiales || "U"}
+                    </div>
+
+                    <div className="sidebar-profile-info">
+
+                        <strong>
+                            {utilisateur?.prenom} {utilisateur?.nom}
+                        </strong>
+
+                        <p>{utilisateur?.email}</p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    className="sidebar-logout"
+                    onClick={handleDeconnexion}
+                >
+
+                    <LogOut size={18} />
+
+                    Déconnexion
+
+                </button>
+
+            </div>
 
         </aside>
     );

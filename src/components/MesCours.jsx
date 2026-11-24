@@ -1,8 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Search, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { api, apiBlob } from "../api";
 
 function MesCours() {
+
+    const navigate = useNavigate();
 
     // Je stocke mes cours
     const [cours, setCours] = useState([]);
@@ -10,34 +13,135 @@ function MesCours() {
     // Je stocke ma recherche
     const [recherche, setRecherche] = useState("");
 
-    // Je garde le cours sélectionné
+    // Je garde mon cours sélectionné
     const [coursSelectionne, setCoursSelectionne] = useState(null);
 
-    // Je garde l'onglet actif
+    // Je garde mon onglet actif
     const [ongletActif, setOngletActif] = useState("original");
 
-    // Je récupère mes cours depuis le backend
+    // Je gère l'affichage de mon PDF
+    const [urlPDF, setUrlPDF] = useState("");
+    const [chargementPDF, setChargementPDF] = useState(false);
+    const [erreurPDF, setErreurPDF] = useState("");
+
+    // Je gère le chargement de mes cours
+    const [chargement, setChargement] = useState(true);
+    const [erreur, setErreur] = useState("");
+
+    // Je récupère les cours de mon compte
     useEffect(() => {
-        fetch("http://localhost:3001/api/cours")
-            .then((reponse) => reponse.json())
-            .then((donnees) => setCours(donnees));
+        const controller = new AbortController();
+
+        async function chargerCours() {
+            try {
+                const donnees = await api("/cours", {
+                    signal: controller.signal
+                });
+
+                if (!controller.signal.aborted) {
+                    setCours(donnees);
+                }
+
+            } catch (erreur) {
+                if (!controller.signal.aborted) {
+                    setErreur(erreur.message);
+                }
+
+            } finally {
+                if (!controller.signal.aborted) {
+                    setChargement(false);
+                }
+            }
+        }
+
+        chargerCours();
+
+        return () => controller.abort();
+
     }, []);
 
-    // Je filtre les cours selon ma recherche
+    // Je récupère mon PDF avec mon token
+    useEffect(() => {
+
+        setUrlPDF("");
+        setErreurPDF("");
+
+        if (!coursSelectionne || ongletActif !== "original") {
+            setChargementPDF(false);
+            return;
+        }
+
+        const controller = new AbortController();
+        let urlTemporaire = "";
+
+        async function chargerPDF() {
+            setChargementPDF(true);
+
+            try {
+                const fichier = await apiBlob(
+                    `/cours/${coursSelectionne}`,
+                    {
+                        signal: controller.signal
+                    }
+                );
+
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                urlTemporaire = URL.createObjectURL(fichier);
+
+                setUrlPDF(urlTemporaire);
+
+            } catch (erreur) {
+                if (!controller.signal.aborted) {
+                    setErreurPDF(erreur.message);
+                }
+
+            } finally {
+                if (!controller.signal.aborted) {
+                    setChargementPDF(false);
+                }
+            }
+        }
+
+        chargerPDF();
+
+        // Je libère mon PDF quand je ferme le cours
+        return () => {
+            controller.abort();
+
+            if (urlTemporaire) {
+                URL.revokeObjectURL(urlTemporaire);
+            }
+        };
+
+    }, [coursSelectionne, ongletActif]);
+
+    // Je filtre mes cours
     const coursFiltres = cours.filter((coursItem) => {
         return coursItem.nom
             .toLowerCase()
             .includes(recherche.toLowerCase());
     });
 
+    // Je sélectionne un cours
+    function ouvrirCours(id) {
+        setCoursSelectionne(id);
+        setOngletActif("original");
+    }
+
     return (
         <main className="mes-cours-page">
 
             <h1>Mes cours</h1>
-            <p>Retrouvez ici vos cours enregistrés sur MedStudy AI</p>
 
-            {/* Je crée ma barre de recherche */}
+            <p>
+                Retrouvez ici vos cours enregistrés sur MedStudy AI
+            </p>
+
             <div className="cours-recherche">
+
                 <Search size={20} />
 
                 <input
@@ -46,32 +150,52 @@ function MesCours() {
                     onChange={(e) => setRecherche(e.target.value)}
                     placeholder="Rechercher un cours..."
                 />
+
             </div>
 
-            {/* Je vérifie si j'ai des cours */}
-            {cours.length === 0 && (
+            {chargement && (
+                <p>Chargement de vos cours...</p>
+            )}
+
+            {erreur && (
+                <p
+                    className="med-message med-message-erreur"
+                    role="alert"
+                >
+                    {erreur}
+                </p>
+            )}
+
+            {!chargement && !erreur && cours.length === 0 && (
                 <p>Vous n'avez pas encore ajouté de cours.</p>
             )}
 
-            {/* Je vérifie si ma recherche donne un résultat */}
             {cours.length > 0 && coursFiltres.length === 0 && (
                 <p>Aucun cours trouvé pour cette recherche.</p>
             )}
 
-            {/* J'affiche mes cours */}
             <div className="cours-liste">
+
                 {coursFiltres.map((coursItem) => (
 
-                    <div className="cours-element" key={coursItem.id}>
+                    <div
+                        className="cours-element"
+                        key={coursItem.id}
+                    >
 
-                        {/* Je sélectionne mon cours */}
                         <div
                             className="cours-card"
-                            onClick={() => {
-                                setCoursSelectionne(coursItem.id);
-                                setOngletActif("original");
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => ouvrirCours(coursItem.id)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    ouvrirCours(coursItem.id);
+                                }
                             }}
                         >
+
                             <div className="cours-icon">
                                 <FileText size={32} />
                             </div>
@@ -80,9 +204,9 @@ function MesCours() {
                                 <h3>{coursItem.nom}</h3>
                                 <p>{coursItem.matiere}</p>
                             </div>
+
                         </div>
 
-                        {/* J'affiche les onglets sous le cours sélectionné */}
                         {coursSelectionne === coursItem.id && (
 
                             <div className="cours-details">
@@ -90,74 +214,123 @@ function MesCours() {
                                 <div className="cours-onglets">
 
                                     <button
-                                        className={ongletActif === "original" ? "actif" : ""}
-                                        onClick={() => setOngletActif("original")}
+                                        className={
+                                            ongletActif === "original"
+                                                ? "actif"
+                                                : ""
+                                        }
+                                        onClick={() =>
+                                            setOngletActif("original")
+                                        }
                                     >
                                         Cours original
                                     </button>
 
                                     <button
-                                        className={ongletActif === "fiche" ? "actif" : ""}
-                                        onClick={() => setOngletActif("fiche")}
+                                        className={
+                                            ongletActif === "fiche"
+                                                ? "actif"
+                                                : ""
+                                        }
+                                        onClick={() =>
+                                            setOngletActif("fiche")
+                                        }
                                     >
                                         Fiche IA
                                     </button>
 
                                     <button
                                         className="cours-fermer"
-                                        onClick={() => setCoursSelectionne(null)}
+                                        onClick={() =>
+                                            setCoursSelectionne(null)
+                                        }
                                     >
                                         Fermer le cours
                                     </button>
 
                                 </div>
 
-                                {/* J'affiche le PDF */}
+                                {/* J'affiche mon PDF */}
                                 {ongletActif === "original" && (
-                                    <iframe
-                                        src={`http://localhost:3001/api/cours/${coursSelectionne}`}
-                                        title="Cours original"
-                                        className="cours-pdf"
-                                    />
+
+                                    <>
+
+                                        {chargementPDF && (
+                                            <p>Chargement du PDF...</p>
+                                        )}
+
+                                        {erreurPDF && (
+                                            <p className="med-message med-message-erreur">
+                                                {erreurPDF}
+                                            </p>
+                                        )}
+
+                                        {urlPDF && !chargementPDF && (
+                                            <iframe
+                                                src={urlPDF}
+                                                title="Cours original"
+                                                className="cours-pdf"
+                                            />
+                                        )}
+
+                                    </>
+
                                 )}
 
-                                {/* Je prépare la future fiche IA */}
+                                {/* J'accède à mes fiches IA */}
                                 {ongletActif === "fiche" && (
+
                                     <div className="cours-fiche-ia">
+
                                         <FileText size={36} />
+
                                         <h3>Fiche de révision IA</h3>
+
                                         <p>
-                                            La génération des fiches IA sera
-                                            bientôt disponible.
+                                            Génère ou consulte tes fiches
+                                            de révision grâce à l'IA.
                                         </p>
+
+                                        <button
+                                            className="med-bouton-principal"
+                                            onClick={() => navigate("/fiches")}
+                                        >
+                                            Accéder à mes fiches
+                                        </button>
+
                                     </div>
+
                                 )}
 
                             </div>
+
                         )}
 
                     </div>
+
                 ))}
+
             </div>
 
-            {/* J'affiche un message quand aucun cours n'est ouvert */}
-{coursSelectionne === null && cours.length > 0 && (
-    <div className="cours-accueil">
+            {coursSelectionne === null && cours.length > 0 && (
 
-        <div className="cours-accueil-icon">
-            <FileText size={38} />
-        </div>
+                <div className="cours-accueil">
 
-        <h2>Prête à réviser ?</h2>
+                    <div className="cours-accueil-icon">
+                        <FileText size={38} />
+                    </div>
 
-        <p>
-            Sélectionne un cours pour consulter ton PDF
-            et accéder prochainement à tes fiches
-            de révision générées par l'IA.
-        </p>
+                    <h2>Prête à réviser ?</h2>
 
-    </div>
-)}
+                    <p>
+                        Sélectionne un cours pour consulter ton PDF
+                        et accéder à tes fiches de révision
+                        générées par l'IA.
+                    </p>
+
+                </div>
+
+            )}
 
         </main>
     );
