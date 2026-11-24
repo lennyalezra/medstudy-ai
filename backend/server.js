@@ -20,6 +20,8 @@ const upload = multer({
 // je configure mon serveur
 app.use(cors());
 app.use(express.json());
+// Je relie mes nouvelles routes
+app.use("/api", require("./routesRevision"));
 
 const PORT = 3001;
 

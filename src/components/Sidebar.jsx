@@ -1,7 +1,7 @@
-
 import { NavLink } from "react-router-dom";
 
 function Sidebar() {
+
     return (
         <aside className="sidebar">
 
@@ -31,6 +31,10 @@ function Sidebar() {
                     Quiz / QCM
                 </NavLink>
 
+                <NavLink to="/flashcards">
+                    Mes flashcards
+                </NavLink>
+
                 <NavLink to="/statistiques">
                     Statistiques
                 </NavLink>
@@ -40,6 +44,7 @@ function Sidebar() {
                 </NavLink>
 
             </nav>
+
         </aside>
     );
 }

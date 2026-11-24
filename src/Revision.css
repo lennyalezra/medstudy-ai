@@ -1,0 +1,330 @@
+/* Je personnalise mes statistiques */
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.med-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.med-page > .med-panel {
+    margin-top: 25px;
+}
+
+/* Je personnalise mes cours récents */
+
+.recent-courses .course-card {
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+    transition: transform 0.2s ease;
+}
+
+.recent-courses .course-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Je personnalise ma progression */
+
+.revision-card:last-child::after {
+    content: none;
+}
+
+.revision-card .med-progress-track {
+    margin: 15px 0;
+}
+
+.revision-card button {
+    margin-top: 15px;
+}
+
+.med-section-title {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+/* Je personnalise mes filtres */
+
+.med-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+/* Je personnalise mes flashcards */
+
+.flashcard-session {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    background: #ffffff;
+    border: 1px solid #e8dff3;
+    border-radius: 24px;
+    margin-top: 25px;
+}
+
+.flashcard-session > p {
+    color: #80699d;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.flashcard {
+    width: 100%;
+    max-width: 750px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 35px;
+    background: linear-gradient(
+        135deg,
+        #f7f1ff,
+        #e9dcfa
+    );
+    border: 1px solid #d9c6ee;
+    border-radius: 24px;
+    font-family: inherit;
+    color: #493364;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+    box-shadow: 0 10px 30px rgba(110, 74, 150, 0.08);
+    transition: transform 0.25s ease,
+                background 0.25s ease;
+}
+
+.flashcard:hover {
+    transform: translateY(-4px);
+}
+
+.flashcard-retournee {
+    background: linear-gradient(
+        135deg,
+        #e9f7ef,
+        #d6efdf
+    );
+    border-color: #b9ddc7;
+    color: #315b40;
+}
+
+.flashcard > span {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.flashcard h3 {
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.flashcard p {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.flashcard small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+.flashcard-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Je personnalise mes listes */
+
+.revision-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.progression-card {
+    background: #ffffff;
+    border: 1px solid #e9e0f2;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 5px 20px rgba(100, 70, 140, 0.05);
+}
+
+.progression-card h3 {
+    color: #52386f;
+    margin-bottom: 12px;
+    overflow-wrap: anywhere;
+}
+
+.progression-card p {
+    color: #786b87;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.progression-card .med-progress-track {
+    margin: 15px 0;
+}
+
+.progression-card strong {
+    font-size: 13px;
+    color: #9565d0;
+}
+
+/* Je personnalise mes corrections */
+
+.correction-card {
+    background: #ffffff;
+    border: 1px solid #e7def1;
+    border-left: 5px solid #9565d0;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 18px;
+}
+
+.correction-correcte {
+    border-left-color: #56a875;
+}
+
+.correction-incorrecte {
+    border-left-color: #d87575;
+}
+
+.correction-card h3 {
+    color: #493364;
+    margin-bottom: 15px;
+}
+
+.correction-card p {
+    color: #665c72;
+    line-height: 1.7;
+    margin: 10px 0;
+}
+
+.correction-card strong {
+    color: #493364;
+}
+
+/* Je personnalise mon graphique */
+
+.revision-graph {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 25px 0;
+}
+
+.revision-graph-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 45px;
+    align-items: center;
+    gap: 12px;
+}
+
+.revision-graph-row span {
+    font-size: 12px;
+    color: #82748f;
+}
+
+.revision-graph-row strong {
+    color: #9565d0;
+    font-size: 14px;
+}
+
+.revision-graph-row .med-progress-track {
+    width: 100%;
+    margin: 0;
+}
+
+/* Je désactive les boutons pendant le chargement */
+
+.med-primary-btn:disabled,
+.med-secondary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* J'adapte mes pages aux tablettes */
+
+@media (max-width: 900px) {
+
+    .stats-container,
+    .med-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .revision-list {
+        grid-template-columns: 1fr;
+    }
+
+    .med-quiz-card {
+        flex-wrap: wrap;
+    }
+}
+
+/* J'adapte mes pages aux téléphones */
+
+@media (max-width: 650px) {
+
+    .stats-container,
+    .med-stats-grid,
+    .med-stat-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .flashcard-session {
+        padding: 15px;
+    }
+
+    .flashcard {
+        min-height: 280px;
+        padding: 20px;
+    }
+
+    .flashcard p {
+        font-size: 18px;
+    }
+
+    .flashcard-actions {
+        width: 100%;
+    }
+
+    .flashcard-actions button {
+        flex: 1;
+    }
+
+    .revision-graph-row {
+        grid-template-columns: 75px minmax(0, 1fr) 40px;
+        gap: 8px;
+    }
+
+    .correction-card {
+        padding: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .flashcard,
+    .recent-courses .course-card {
+        transition: none;
+    }
+}

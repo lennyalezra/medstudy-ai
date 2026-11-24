@@ -1,322 +1,500 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     GraduationCap,
     ClipboardList,
-    CheckCircle2,
     Trophy,
     RotateCcw,
     ArrowRight,
     BookOpen
 } from "lucide-react";
-
-// Je prépare des questions pour tester mon quiz
-const questionsDemo = [
-    {
-        id: 1,
-        question: "Quel organe permet de faire circuler le sang ?",
-        reponses: [
-            "Les poumons",
-            "Le cœur",
-            "Le foie",
-            "Les reins"
-        ],
-        bonneReponse: 1
-    },
-    {
-        id: 2,
-        question: "Quel organe permet les échanges gazeux ?",
-        reponses: [
-            "L'estomac",
-            "Le cerveau",
-            "Les poumons",
-            "Le pancréas"
-        ],
-        bonneReponse: 2
-    },
-    {
-        id: 3,
-        question: "Quel système comprend le cerveau et la moelle épinière ?",
-        reponses: [
-            "Le système digestif",
-            "Le système nerveux",
-            "Le système respiratoire",
-            "Le système musculaire"
-        ],
-        bonneReponse: 1
-    },
-    {
-        id: 4,
-        question: "Quel organe filtre le sang pour produire l'urine ?",
-        reponses: [
-            "Le rein",
-            "Le cœur",
-            "Le poumon",
-            "L'intestin"
-        ],
-        bonneReponse: 0
-    },
-    {
-        id: 5,
-        question: "Quelle partie du sang transporte principalement l'oxygène ?",
-        reponses: [
-            "Les plaquettes",
-            "Le plasma uniquement",
-            "Les globules rouges",
-            "Les globules blancs"
-        ],
-        bonneReponse: 2
-    }
-];
+import { api } from "../api";
 
 function QuizQCM() {
 
-    // Je gère les étapes du quiz
-    const [quizCommence, setQuizCommence] = useState(false);
-    const [quizTermine, setQuizTermine] = useState(false);
+    const [cours, setCours] = useState([]);
+    const [qcm, setQcm] = useState([]);
+    const [coursId, setCoursId] = useState("");
+    const [niveau, setNiveau] = useState("facile");
+    const [nombre, setNombre] = useState(10);
 
-    // Je garde la question et la réponse choisie
-    const [questionActuelle, setQuestionActuelle] = useState(0);
-    const [reponseChoisie, setReponseChoisie] = useState(null);
+    const [qcmActif, setQcmActif] = useState(null);
+    const [index, setIndex] = useState(0);
+    const [choix, setChoix] = useState(null);
+    const [reponses, setReponses] = useState([]);
+    const [resultat, setResultat] = useState(null);
 
-    // Je garde mon score
-    const [score, setScore] = useState(0);
+    const [chargement, setChargement] = useState(false);
+    const [erreur, setErreur] = useState("");
 
-    const question = questionsDemo[questionActuelle];
+    // Je récupère mes cours et mes QCM
+    async function charger() {
 
-    // Je commence un nouveau quiz
-    function commencerQuiz() {
-        setQuizCommence(true);
-        setQuizTermine(false);
-        setQuestionActuelle(0);
-        setReponseChoisie(null);
-        setScore(0);
+        const [listeCours, listeQcm] = await Promise.all([
+            api("/cours"),
+            api("/qcm")
+        ]);
+
+        setCours(listeCours);
+        setQcm(listeQcm);
     }
 
-    // Je valide ma réponse et passe à la suite
-    function questionSuivante() {
+    useEffect(() => {
+        charger().catch(err => setErreur(err.message));
+    }, []);
 
-        if (reponseChoisie === null) {
-            return;
-        }
+    // Je génère un QCM avec l'IA
+    async function generer(e) {
 
-        const bonneReponse =
-            reponseChoisie === question.bonneReponse;
+        e.preventDefault();
+        setChargement(true);
+        setErreur("");
 
-        const nouveauScore = score + (bonneReponse ? 1 : 0);
-
-        setScore(nouveauScore);
-
-        if (questionActuelle < questionsDemo.length - 1) {
-            setQuestionActuelle(questionActuelle + 1);
-            setReponseChoisie(null);
-        } else {
-
-            // J'enregistre mon résultat dans le navigateur
-            const historique = JSON.parse(
-                localStorage.getItem("medstudy-quiz-resultats") || "[]"
-            );
-
-            historique.push({
-                id: Date.now(),
-                titre: "Quiz de démonstration",
-                score: nouveauScore,
-                total: questionsDemo.length,
-                date: new Date().toISOString()
+        try {
+            const nouveauQcm = await api("/qcm/generer", {
+                method: "POST",
+                body: JSON.stringify({
+                    coursId: Number(coursId),
+                    niveau,
+                    nombre: Number(nombre)
+                })
             });
 
-            localStorage.setItem(
-                "medstudy-quiz-resultats",
-                JSON.stringify(historique)
-            );
+            setQcm(anciens => [nouveauQcm, ...anciens]);
 
-            setQuizTermine(true);
+        } catch (err) {
+            setErreur(err.message);
+        } finally {
+            setChargement(false);
         }
     }
+
+    // Je commence mon quiz
+    function commencer(quiz) {
+
+        setQcmActif(quiz);
+        setIndex(0);
+        setChoix(null);
+        setReponses([]);
+        setResultat(null);
+        setErreur("");
+    }
+
+    // Je valide ma réponse
+    async function questionSuivante() {
+
+        if (choix === null || chargement) return;
+
+        const nouvellesReponses = [...reponses, choix];
+
+        if (index < qcmActif.questions.length - 1) {
+
+            setReponses(nouvellesReponses);
+            setIndex(index + 1);
+            setChoix(null);
+
+        } else {
+
+            setChargement(true);
+            setErreur("");
+
+            try {
+                const donnees = await api(
+                    `/qcm/${qcmActif.id}/terminer`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            reponses: nouvellesReponses
+                        })
+                    }
+                );
+
+                setReponses(nouvellesReponses);
+                setResultat(donnees);
+
+            } catch (err) {
+                setErreur(err.message);
+            } finally {
+                setChargement(false);
+            }
+        }
+    }
+
+    // Je quitte mon quiz
+    function quitter() {
+        setQcmActif(null);
+        setResultat(null);
+        setErreur("");
+    }
+
+    // Je supprime un QCM
+    async function supprimer(id) {
+
+        if (!window.confirm(
+            "Supprimer ce QCM et ses résultats ?"
+        )) return;
+
+        setChargement(true);
+        setErreur("");
+
+        try {
+            await api(`/qcm/${id}`, {
+                method: "DELETE"
+            });
+
+            setQcm(anciens =>
+                anciens.filter(quiz => quiz.id !== id)
+            );
+
+        } catch (err) {
+            setErreur(err.message);
+        } finally {
+            setChargement(false);
+        }
+    }
+
+    const question = qcmActif?.questions[index];
 
     return (
         <main className="med-page">
 
             <div className="med-page-header">
+
                 <div className="med-page-icon">
                     <GraduationCap size={30} />
                 </div>
 
                 <div>
                     <h1>Quiz / QCM</h1>
-                    <p>
-                        Teste tes connaissances, entraîne-toi
-                        et suis ta progression.
-                    </p>
+                    <p>Teste tes connaissances grâce à tes cours.</p>
                 </div>
+
             </div>
 
-            {!quizCommence && (
+            {erreur && (
+                <p className="med-message med-message-erreur">
+                    {erreur}
+                </p>
+            )}
+
+            {!qcmActif && (
                 <>
+
                     <div className="med-hero">
+
                         <div>
                             <h2>Entraîne-toi avec MedStudy AI !</h2>
                             <p>
-                                Révise à ton rythme et teste tes
-                                connaissances grâce aux quiz.
+                                Génère des QCM personnalisés
+                                à partir de tes cours.
                             </p>
                         </div>
 
                         <ClipboardList size={65} />
+
                     </div>
+
+                    <form
+                        className="med-generation-form"
+                        onSubmit={generer}
+                    >
+
+                        <h2>Générer un QCM avec l'IA</h2>
+
+                        <div className="med-field">
+
+                            <label>Choisir un cours</label>
+
+                            <select
+                                value={coursId}
+                                required
+                                onChange={e =>
+                                    setCoursId(e.target.value)
+                                }
+                            >
+
+                                <option value="">
+                                    Sélectionner un cours
+                                </option>
+
+                                {cours.map(c => (
+                                    <option
+                                        key={c.id}
+                                        value={c.id}
+                                    >
+                                        {c.nom}
+                                    </option>
+                                ))}
+
+                            </select>
+
+                        </div>
+
+                        <div className="med-field">
+
+                            <label>Niveau de difficulté</label>
+
+                            <select
+                                value={niveau}
+                                onChange={e =>
+                                    setNiveau(e.target.value)
+                                }
+                            >
+                                <option value="facile">Facile</option>
+                                <option value="moyen">Moyen</option>
+                                <option value="difficile">Difficile</option>
+                            </select>
+
+                        </div>
+
+                        <div className="med-field">
+
+                            <label>Nombre de questions</label>
+
+                            <select
+                                value={nombre}
+                                onChange={e =>
+                                    setNombre(e.target.value)
+                                }
+                            >
+                                {[5, 10, 15, 20].map(n => (
+                                    <option key={n} value={n}>
+                                        {n} questions
+                                    </option>
+                                ))}
+                            </select>
+
+                        </div>
+
+                        <button
+                            className="med-primary-btn"
+                            disabled={chargement || !coursId}
+                        >
+                            {chargement
+                                ? "Chargement..."
+                                : "Générer mon QCM"}
+                        </button>
+
+                    </form>
 
                     <h2 className="med-section-title">
                         Bibliothèque de quiz
                     </h2>
 
-                    <div className="med-quiz-card">
-                        <div className="med-quiz-icon">
-                            <BookOpen size={35} />
+                    {qcm.length === 0 && (
+                        <div className="med-empty">
+                            <h3>Aucun QCM disponible</h3>
+                            <p>Génère ton premier QCM.</p>
                         </div>
+                    )}
 
-                        <div className="med-quiz-info">
-                            <h3>Quiz de démonstration</h3>
-                            <p>
-                                5 questions • Niveau débutant
-                            </p>
-                            <span>
-                                Pour découvrir le fonctionnement des QCM
-                            </span>
-                        </div>
+                    {qcm.map(quiz => (
 
-                        <button
-                            className="med-primary-btn"
-                            onClick={commencerQuiz}
+                        <div
+                            className="med-quiz-card"
+                            key={quiz.id}
                         >
-                            Commencer
-                            <ArrowRight size={17} />
-                        </button>
-                    </div>
 
-                    <div className="med-empty med-quiz-coming">
-                        <GraduationCap size={36} />
+                            <div className="med-quiz-icon">
+                                <BookOpen size={35} />
+                            </div>
 
-                        <h3>Les quiz de tes cours arrivent bientôt</h3>
+                            <div className="med-quiz-info">
 
-                        <p>
-                            Les prochains quiz seront créés à partir
-                            des documents que tu importes.
-                        </p>
-                    </div>
+                                <h3>{quiz.titre}</h3>
+
+                                <p>
+                                    {quiz.questions.length} questions
+                                    • Niveau {quiz.niveau}
+                                </p>
+
+                            </div>
+
+                            <button
+                                className="med-primary-btn"
+                                disabled={chargement}
+                                onClick={() => commencer(quiz)}
+                            >
+                                Commencer
+                                <ArrowRight size={17} />
+                            </button>
+
+                            <button
+                                className="med-secondary-btn"
+                                disabled={chargement}
+                                onClick={() => supprimer(quiz.id)}
+                            >
+                                Supprimer
+                            </button>
+
+                        </div>
+
+                    ))}
+
                 </>
             )}
 
-            {quizCommence && !quizTermine && (
+            {qcmActif && !resultat && question && (
+
                 <div className="med-question-card">
 
                     <div className="med-question-top">
-                        <span>Quiz de démonstration</span>
+
+                        <span>{qcmActif.titre}</span>
 
                         <span>
-                            Question {questionActuelle + 1}
-                            / {questionsDemo.length}
+                            Question {index + 1}
+                            / {qcmActif.questions.length}
                         </span>
+
                     </div>
 
                     <div className="med-progress-track">
+
                         <div
                             className="med-progress-fill"
                             style={{
                                 width: `${
-                                    ((questionActuelle + 1) /
-                                        questionsDemo.length) * 100
+                                    (index + 1) /
+                                    qcmActif.questions.length * 100
                                 }%`
                             }}
                         />
+
                     </div>
 
                     <h2>{question.question}</h2>
 
                     <div className="med-reponses">
-                        {question.reponses.map((reponse, index) => (
+
+                        {question.reponses.map((reponse, i) => (
+
                             <button
-                                key={index}
+                                key={i}
+                                disabled={chargement}
                                 className={
-                                    reponseChoisie === index
-                                        ? "selected"
-                                        : ""
+                                    choix === i ? "selected" : ""
                                 }
-                                onClick={() => setReponseChoisie(index)}
+                                onClick={() => setChoix(i)}
                             >
-                                <span>{String.fromCharCode(65 + index)}</span>
+                                <span>
+                                    {String.fromCharCode(65 + i)}
+                                </span>
+
                                 {reponse}
+
                             </button>
+
                         ))}
+
                     </div>
 
                     <div className="med-question-footer">
+
                         <button
                             className="med-secondary-btn"
-                            onClick={() => {
-                                setQuizCommence(false);
-                            }}
+                            disabled={chargement}
+                            onClick={quitter}
                         >
                             Quitter le quiz
                         </button>
 
                         <button
                             className="med-primary-btn"
-                            disabled={reponseChoisie === null}
+                            disabled={choix === null || chargement}
                             onClick={questionSuivante}
                         >
-                            {questionActuelle === questionsDemo.length - 1
-                                ? "Terminer"
-                                : "Question suivante"}
+                            {chargement
+                                ? "Enregistrement..."
+                                : index === qcmActif.questions.length - 1
+                                    ? "Terminer"
+                                    : "Question suivante"}
+
                             <ArrowRight size={17} />
+
                         </button>
+
                     </div>
 
                 </div>
+
             )}
 
-            {quizCommence && quizTermine && (
-                <div className="med-result-card">
+            {qcmActif && resultat && (
 
-                    <div className="med-result-icon">
-                        <Trophy size={45} />
+                <>
+
+                    <div className="med-result-card">
+
+                        <div className="med-result-icon">
+                            <Trophy size={45} />
+                        </div>
+
+                        <h2>Quiz terminé !</h2>
+
+                        <div className="med-result-score">
+                            {resultat.score} / {resultat.total}
+                        </div>
+
+                        <p>
+                            {resultat.pourcentage}% de bonnes réponses
+                        </p>
+
+                        <div className="med-result-actions">
+
+                            <button
+                                className="med-primary-btn"
+                                onClick={() => commencer(qcmActif)}
+                            >
+                                <RotateCcw size={18} />
+                                Recommencer
+                            </button>
+
+                            <button
+                                className="med-secondary-btn"
+                                onClick={quitter}
+                            >
+                                Retour aux quiz
+                            </button>
+
+                        </div>
+
                     </div>
 
-                    <h2>Quiz terminé !</h2>
+                    <h2 className="med-section-title">
+                        Correction détaillée
+                    </h2>
 
-                    <p>Voici ton résultat :</p>
+                    {qcmActif.questions.map((q, i) => (
 
-                    <div className="med-result-score">
-                        {score} / {questionsDemo.length}
-                    </div>
-
-                    <p>
-                        {Math.round(
-                            (score / questionsDemo.length) * 100
-                        )}% de bonnes réponses
-                    </p>
-
-                    <div className="med-result-actions">
-                        <button
-                            className="med-primary-btn"
-                            onClick={commencerQuiz}
+                        <div
+                            key={i}
+                            className={`correction-card ${
+                                reponses[i] === q.bonneReponse
+                                    ? "correction-correcte"
+                                    : "correction-incorrecte"
+                            }`}
                         >
-                            <RotateCcw size={18} />
-                            Recommencer
-                        </button>
 
-                        <button
-                            className="med-secondary-btn"
-                            onClick={() => {
-                                setQuizCommence(false);
-                                setQuizTermine(false);
-                            }}
-                        >
-                            <CheckCircle2 size={18} />
-                            Retour aux quiz
-                        </button>
-                    </div>
+                            <h3>{i + 1}. {q.question}</h3>
 
-                </div>
+                            <p>
+                                Ta réponse : {q.reponses[reponses[i]]}
+                            </p>
+
+                            <p>
+                                Bonne réponse : {q.reponses[q.bonneReponse]}
+                            </p>
+
+                            <strong>Explication :</strong>
+
+                            <p>{q.explication}</p>
+
+                        </div>
+
+                    ))}
+
+                </>
+
             )}
 
         </main>
