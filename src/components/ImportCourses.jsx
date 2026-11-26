@@ -1,17 +1,22 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import ProgressionIA from "./ProgressionIA";
 
 function ImportCourses() {
+
+    const navigate = useNavigate();
 
     // Je stocke mon fichier
     const [fichier, setFichier] = useState(null);
     const [message, setMessage] = useState("");
     const [chargement, setChargement] = useState(false);
     const [erreur, setErreur] = useState(false);
+    const [coursImporte, setCoursImporte] = useState(null);
 
     const inputFichier = useRef(null);
 
-    // Je vérifie mon fichier
+    // Je vérifie mon PDF
     function handleFileChange(event) {
         const fichierSelectionne = event.target.files[0];
 
@@ -30,8 +35,8 @@ function ImportCourses() {
             return;
         }
 
-        if (fichierSelectionne.size > 10 * 1024 * 1024) {
-            setMessage("Le fichier ne doit pas dépasser 10 Mo");
+        if (fichierSelectionne.size > 100 * 1024 * 1024) {
+            setMessage("Le fichier ne doit pas dépasser 100 Mo");
             setErreur(true);
             event.target.value = "";
             return;
@@ -40,8 +45,9 @@ function ImportCourses() {
         setFichier(fichierSelectionne);
     }
 
-    // J'envoie mon PDF dans mon compte
+    // J'importe mon cours et je lance sa génération
     async function handleAnalyse() {
+
         if (!fichier || chargement) {
             return;
         }
@@ -61,14 +67,15 @@ function ImportCourses() {
             });
 
             setMessage(donnees.message);
+            setCoursImporte(donnees.coursId);
             setFichier(null);
 
             if (inputFichier.current) {
                 inputFichier.current.value = "";
             }
 
-        } catch (erreur) {
-            setMessage(erreur.message);
+        } catch (err) {
+            setMessage(err.message);
             setErreur(true);
 
         } finally {
@@ -78,6 +85,7 @@ function ImportCourses() {
 
     return (
         <main>
+
             <div className="import-card">
 
                 <img
@@ -89,7 +97,8 @@ function ImportCourses() {
                 <h1>Importer les cours</h1>
 
                 <p>
-                    Vous pouvez importer vos cours au format PDF
+                    Importez votre cours PDF.
+                    Votre fiche sera générée automatiquement.
                 </p>
 
                 <div className="upload-zone">
@@ -104,7 +113,7 @@ function ImportCourses() {
                         disabled={chargement}
                     />
 
-                    <p>Taille maximale : 10 Mo</p>
+                    <p>Taille maximale : 100 Mo</p>
 
                 </div>
 
@@ -114,7 +123,8 @@ function ImportCourses() {
                         <p>{fichier.name}</p>
 
                         <p>
-                            {(fichier.size / (1024 * 1024)).toFixed(2)} Mo
+                            {(fichier.size / (1024 * 1024))
+                                .toFixed(2)} Mo
                         </p>
 
                     </div>
@@ -125,8 +135,8 @@ function ImportCourses() {
                     disabled={chargement || !fichier}
                 >
                     {chargement
-                        ? "Envoi en cours..."
-                        : "Analyser mon cours"}
+                        ? "Importation en cours..."
+                        : "Importer et générer ma fiche"}
                 </button>
 
                 {message && (
@@ -142,7 +152,37 @@ function ImportCourses() {
                     </p>
                 )}
 
+                {coursImporte && (
+                    <>
+                        <ProgressionIA
+                            key={coursImporte}
+                            coursId={coursImporte}
+                        />
+
+                        <div className="generation-ia-navigation">
+
+                            <button
+                                onClick={() =>
+                                    navigate("/cours")
+                                }
+                            >
+                                Mes cours
+                            </button>
+
+                            <button
+                                onClick={() =>
+                                    navigate("/fiches")
+                                }
+                            >
+                                Mes fiches de révision
+                            </button>
+
+                        </div>
+                    </>
+                )}
+
             </div>
+
         </main>
     );
 }

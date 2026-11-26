@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api } from "../api";
+import ProgressionIA from "./ProgressionIA";
 
 import {
     FileText,
@@ -20,39 +22,36 @@ import {
 
 function FichesRevision() {
 
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const ficheId = searchParams.get("fiche");
+
     // Je stocke mes fiches et mes cours
     const [fiches, setFiches] = useState([]);
     const [cours, setCours] = useState([]);
 
-    // Je gère ma recherche
     const [recherche, setRecherche] = useState("");
     const [matiereActive, setMatiereActive] = useState("Toutes");
 
-    // Je gère mes chargements et mes messages
     const [chargement, setChargement] = useState(true);
     const [actionEnCours, setActionEnCours] = useState(false);
+    const [lectureEnCours, setLectureEnCours] = useState(false);
+
     const [erreur, setErreur] = useState("");
     const [succes, setSucces] = useState("");
 
-    // Je stocke ma fiche ouverte
     const [ficheOuverte, setFicheOuverte] = useState(null);
 
-    // Je gère mon formulaire de modification
+    // Je prépare mes modifications
     const [modification, setModification] = useState(false);
     const [titre, setTitre] = useState("");
     const [matiere, setMatiere] = useState("");
     const [contenu, setContenu] = useState("");
 
-    // Je gère la génération de mes fiches
     const [afficherGeneration, setAfficherGeneration] = useState(false);
     const [coursId, setCoursId] = useState("");
 
-    // Je récupère mes données au démarrage
-    useEffect(() => {
-        chargerDonnees();
-    }, []);
-
-    // Je récupère les fiches et les cours de mon compte
+    // Je récupère mes données
     async function chargerDonnees() {
         setChargement(true);
         setErreur("");
@@ -66,47 +65,137 @@ function FichesRevision() {
             setFiches(donneesFiches);
             setCours(donneesCours);
 
-        } catch (erreur) {
-            setErreur(erreur.message);
+        } catch (err) {
+            setErreur(err.message);
 
         } finally {
             setChargement(false);
         }
     }
 
-    // Je récupère une de mes fiches
-    async function recupererFiche(id) {
-        return await api(`/fiches/${id}`);
-    }
+    // J'actualise automatiquement mes fiches
+    useEffect(() => {
+        const controller = new AbortController();
+        let minuterie;
+
+        async function actualiser() {
+            try {
+                const [donneesFiches, donneesCours] =
+                    await Promise.all([
+                        api("/fiches", {
+                            signal: controller.signal
+                        }),
+                        api("/cours", {
+                            signal: controller.signal
+                        })
+                    ]);
+
+                if (!controller.signal.aborted) {
+                    setFiches(donneesFiches);
+                    setCours(donneesCours);
+                }
+
+            } catch (err) {
+                if (!controller.signal.aborted) {
+                    setErreur(err.message);
+                }
+
+            } finally {
+                if (!controller.signal.aborted) {
+                    setChargement(false);
+
+                    minuterie = setTimeout(
+                        actualiser,
+                        5000
+                    );
+                }
+            }
+        }
+
+        actualiser();
+
+        return () => {
+            controller.abort();
+            clearTimeout(minuterie);
+        };
+
+    }, []);
+
+    // J'ouvre directement ma fiche depuis son URL
+    useEffect(() => {
+
+        setModification(false);
+        setFicheOuverte(null);
+        setLectureEnCours(false);
+
+        if (!ficheId) return;
+
+        if (
+            !Number.isInteger(Number(ficheId)) ||
+            Number(ficheId) <= 0
+        ) {
+            setErreur("Identifiant de fiche invalide");
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function chargerFiche() {
+            setLectureEnCours(true);
+            setErreur("");
+
+            try {
+                const fiche = await api(
+                    `/fiches/${ficheId}`,
+                    { signal: controller.signal }
+                );
+
+                if (!controller.signal.aborted) {
+                    setFicheOuverte(fiche);
+                }
+
+            } catch (err) {
+                if (!controller.signal.aborted) {
+                    setErreur(err.message);
+                }
+
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLectureEnCours(false);
+                }
+            }
+        }
+
+        chargerFiche();
+
+        return () => controller.abort();
+
+    }, [ficheId]);
 
     // J'ouvre une fiche
-    async function ouvrirFiche(id) {
-        setActionEnCours(true);
+    function ouvrirFiche(id) {
         setErreur("");
         setSucces("");
-
-        try {
-            const fiche = await recupererFiche(id);
-
-            setFicheOuverte(fiche);
-            setModification(false);
-
-        } catch (erreur) {
-            setErreur(erreur.message);
-
-        } finally {
-            setActionEnCours(false);
-        }
+        setSearchParams({ fiche: String(id) });
     }
 
-    // Je prépare mes champs de modification
+    // Je retourne à mes fiches
+    function fermerFiche() {
+        setFicheOuverte(null);
+        setModification(false);
+        setErreur("");
+        setSucces("");
+        setSearchParams({});
+    }
+
+    // Je prépare mon formulaire
     async function modifierFiche(id) {
         setActionEnCours(true);
         setErreur("");
         setSucces("");
 
         try {
-            const fiche = await recupererFiche(id);
+            const fiche = await api(`/fiches/${id}`);
 
             setFicheOuverte(fiche);
             setTitre(fiche.titre);
@@ -114,8 +203,8 @@ function FichesRevision() {
             setContenu(fiche.contenu);
             setModification(true);
 
-        } catch (erreur) {
-            setErreur(erreur.message);
+        } catch (err) {
+            setErreur(err.message);
 
         } finally {
             setActionEnCours(false);
@@ -126,9 +215,7 @@ function FichesRevision() {
     async function enregistrerFiche(e) {
         e.preventDefault();
 
-        if (!ficheOuverte || actionEnCours) {
-            return;
-        }
+        if (!ficheOuverte || actionEnCours) return;
 
         if (!titre.trim() || !contenu.trim()) {
             setErreur("Le titre et le contenu sont obligatoires");
@@ -152,13 +239,11 @@ function FichesRevision() {
                 }
             );
 
-            // Je mets à jour ma fiche ouverte
             setFicheOuverte(donnees.fiche);
             setModification(false);
 
-            // Je mets à jour ma liste
-            setFiches((anciennesFiches) =>
-                anciennesFiches.map((fiche) =>
+            setFiches(anciennesFiches =>
+                anciennesFiches.map(fiche =>
                     fiche.id === donnees.fiche.id
                         ? donnees.fiche
                         : fiche
@@ -168,27 +253,23 @@ function FichesRevision() {
             setMatiereActive("Toutes");
             setSucces("Ta fiche a bien été modifiée");
 
-        } catch (erreur) {
-            setErreur(erreur.message);
+        } catch (err) {
+            setErreur(err.message);
 
         } finally {
             setActionEnCours(false);
         }
     }
 
-    // Je supprime une de mes fiches
+    // Je supprime ma fiche
     async function supprimerFiche(id) {
-        if (actionEnCours) {
-            return;
-        }
+        if (actionEnCours) return;
 
         const confirmation = window.confirm(
             "Voulez-vous vraiment supprimer cette fiche ?"
         );
 
-        if (!confirmation) {
-            return;
-        }
+        if (!confirmation) return;
 
         setActionEnCours(true);
         setErreur("");
@@ -199,35 +280,32 @@ function FichesRevision() {
                 method: "DELETE"
             });
 
-            // Je retire ma fiche de la liste
-            setFiches((anciennesFiches) =>
-                anciennesFiches.filter((fiche) => fiche.id !== id)
+            setFiches(anciennesFiches =>
+                anciennesFiches.filter(
+                    fiche => fiche.id !== id
+                )
             );
 
-            // Je ferme ma fiche si elle est ouverte
             if (ficheOuverte?.id === id) {
-                setFicheOuverte(null);
-                setModification(false);
+                fermerFiche();
             }
 
             setMatiereActive("Toutes");
             setSucces("Ta fiche a bien été supprimée");
 
-        } catch (erreur) {
-            setErreur(erreur.message);
+        } catch (err) {
+            setErreur(err.message);
 
         } finally {
             setActionEnCours(false);
         }
     }
 
-    // Je génère une nouvelle fiche avec Groq
+    // Je génère une fiche supplémentaire
     async function genererNouvelleFiche(e) {
         e.preventDefault();
 
-        if (actionEnCours) {
-            return;
-        }
+        if (actionEnCours) return;
 
         if (!coursId) {
             setErreur("Sélectionne un cours");
@@ -246,22 +324,23 @@ function FichesRevision() {
                 })
             });
 
-            // J'ajoute ma nouvelle fiche à la liste
-            setFiches((anciennesFiches) => [
+            setFiches(anciennesFiches => [
                 donnees.fiche,
-                ...anciennesFiches
+                ...anciennesFiches.filter(
+                    fiche => fiche.id !== donnees.fiche.id
+                )
             ]);
 
-            setFicheOuverte(donnees.fiche);
-            setModification(false);
             setAfficherGeneration(false);
             setCoursId("");
             setMatiereActive("Toutes");
 
+            ouvrirFiche(donnees.fiche.id);
+
             setSucces("Ta nouvelle fiche a été générée");
 
-        } catch (erreur) {
-            setErreur(erreur.message);
+        } catch (err) {
+            setErreur(err.message);
 
         } finally {
             setActionEnCours(false);
@@ -273,18 +352,18 @@ function FichesRevision() {
         return new Date(date).toLocaleDateString("fr-FR");
     }
 
-    // Je prépare mes matières
+    // Je récupère mes matières
     const matieres = [
         "Toutes",
         ...new Set(
-            fiches.map((fiche) =>
+            fiches.map(fiche =>
                 fiche.matiere || "Non renseignée"
             )
         )
     ];
 
     // Je filtre mes fiches
-    const fichesFiltrees = fiches.filter((fiche) => {
+    const fichesFiltrees = fiches.filter(fiche => {
 
         const correspondRecherche = fiche.titre
             .toLowerCase()
@@ -297,7 +376,16 @@ function FichesRevision() {
         return correspondRecherche && correspondMatiere;
     });
 
-    // Je prépare mes messages
+    // Je récupère mes générations en cours
+    const coursEnPreparation = cours.filter(unCours =>
+        [
+            "file_attente",
+            "analyse",
+            "generation",
+            "erreur"
+        ].includes(unCours.statut_ia)
+    );
+
     const messages = (
         <>
             {erreur && (
@@ -320,7 +408,20 @@ function FichesRevision() {
         </>
     );
 
-    // J'affiche mon formulaire de modification
+    // J'affiche le chargement de ma fiche
+    if (lectureEnCours) {
+        return (
+            <main className="med-page">
+
+                <div className="med-empty">
+                    <h2>Chargement de la fiche...</h2>
+                </div>
+
+            </main>
+        );
+    }
+
+    // Je modifie ma fiche
     if (ficheOuverte && modification) {
         return (
             <main className="med-page">
@@ -331,7 +432,7 @@ function FichesRevision() {
                     onClick={() => setModification(false)}
                 >
                     <ArrowLeft size={18} />
-                    Annuler la modification
+                    Retour à la fiche
                 </button>
 
                 <div className="med-page-header">
@@ -350,71 +451,48 @@ function FichesRevision() {
                 {messages}
 
                 <form
-                    className="med-edition-form"
+                    className="med-generation-form"
                     onSubmit={enregistrerFiche}
                 >
 
-                    <label htmlFor="fiche-titre">
+                    <label htmlFor="titre-fiche">
                         Titre
                     </label>
 
                     <input
-                        id="fiche-titre"
+                        id="titre-fiche"
                         type="text"
-                        maxLength={255}
                         value={titre}
-                        onChange={(e) => setTitre(e.target.value)}
-                        disabled={actionEnCours}
+                        maxLength={255}
+                        onChange={e => setTitre(e.target.value)}
                         required
                     />
 
-                    <label htmlFor="fiche-matiere">
+                    <label htmlFor="matiere-fiche">
                         Matière
                     </label>
 
                     <input
-                        id="fiche-matiere"
+                        id="matiere-fiche"
                         type="text"
-                        maxLength={255}
                         value={matiere}
-                        onChange={(e) => setMatiere(e.target.value)}
-                        disabled={actionEnCours}
+                        maxLength={255}
+                        onChange={e => setMatiere(e.target.value)}
                     />
 
-                    <label htmlFor="fiche-contenu">
-                        Contenu de la fiche (Markdown)
+                    <label htmlFor="contenu-fiche">
+                        Contenu
                     </label>
 
                     <textarea
-                        id="fiche-contenu"
-                        rows={16}
+                        id="contenu-fiche"
                         value={contenu}
-                        onChange={(e) => setContenu(e.target.value)}
-                        disabled={actionEnCours}
+                        onChange={e => setContenu(e.target.value)}
+                        rows={18}
                         required
                     />
 
-                    <h2>Aperçu de ma fiche</h2>
-
-                    <div className="med-fiche-contenu med-apercu">
-
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {contenu}
-                        </ReactMarkdown>
-
-                    </div>
-
-                    <div className="med-edition-actions">
-
-                        <button
-                            type="button"
-                            className="med-retour-fiche"
-                            disabled={actionEnCours}
-                            onClick={() => setModification(false)}
-                        >
-                            <X size={18} />
-                            Annuler
-                        </button>
+                    <div className="med-fiche-outils">
 
                         <button
                             type="submit"
@@ -428,6 +506,16 @@ function FichesRevision() {
                                 : "Enregistrer"}
                         </button>
 
+                        <button
+                            type="button"
+                            className="med-retour-fiche"
+                            disabled={actionEnCours}
+                            onClick={() => setModification(false)}
+                        >
+                            <X size={18} />
+                            Annuler
+                        </button>
+
                     </div>
 
                 </form>
@@ -436,19 +524,15 @@ function FichesRevision() {
         );
     }
 
-    // J'affiche ma fiche ouverte
+    // Je consulte ma fiche
     if (ficheOuverte) {
         return (
             <main className="med-page">
 
                 <button
                     className="med-retour-fiche"
+                    onClick={fermerFiche}
                     disabled={actionEnCours}
-                    onClick={() => {
-                        setFicheOuverte(null);
-                        setErreur("");
-                        setSucces("");
-                    }}
                 >
                     <ArrowLeft size={18} />
                     Retour à mes fiches
@@ -470,6 +554,12 @@ function FichesRevision() {
                             {formaterDate(ficheOuverte.date_creation)}
                         </p>
 
+                        {ficheOuverte.automatique && (
+                            <small>
+                                Générée automatiquement par l'IA
+                            </small>
+                        )}
+
                     </div>
 
                 </div>
@@ -481,7 +571,9 @@ function FichesRevision() {
                     <button
                         className="med-bouton-principal"
                         disabled={actionEnCours}
-                        onClick={() => modifierFiche(ficheOuverte.id)}
+                        onClick={() =>
+                            modifierFiche(ficheOuverte.id)
+                        }
                     >
                         <Pencil size={17} />
                         Modifier
@@ -490,7 +582,9 @@ function FichesRevision() {
                     <button
                         className="med-bouton-danger"
                         disabled={actionEnCours}
-                        onClick={() => supprimerFiche(ficheOuverte.id)}
+                        onClick={() =>
+                            supprimerFiche(ficheOuverte.id)
+                        }
                     >
                         <Trash2 size={17} />
                         Supprimer
@@ -539,6 +633,30 @@ function FichesRevision() {
 
             {messages}
 
+            {coursEnPreparation.length > 0 && (
+
+                <section>
+
+                    <h2 className="med-section-title">
+                        Générations automatiques
+                    </h2>
+
+                    {coursEnPreparation.map(unCours => (
+
+                        <div key={unCours.id}>
+
+                            <strong>{unCours.nom}</strong>
+
+                            <ProgressionIA coursId={unCours.id} />
+
+                        </div>
+
+                    ))}
+
+                </section>
+
+            )}
+
             <div className="med-fiche-outils">
 
                 <button
@@ -572,7 +690,7 @@ function FichesRevision() {
                     onSubmit={genererNouvelleFiche}
                 >
 
-                    <h2>Créer une fiche avec l'IA</h2>
+                    <h2>Créer une fiche supplémentaire</h2>
 
                     <p>
                         Choisis un cours PDF déjà importé.
@@ -585,7 +703,7 @@ function FichesRevision() {
                     <select
                         id="cours-selection"
                         value={coursId}
-                        onChange={(e) => setCoursId(e.target.value)}
+                        onChange={e => setCoursId(e.target.value)}
                         disabled={actionEnCours || chargement}
                         required
                     >
@@ -594,7 +712,7 @@ function FichesRevision() {
                             Choisir un cours
                         </option>
 
-                        {cours.map((unCours) => (
+                        {cours.map(unCours => (
 
                             <option
                                 key={unCours.id}
@@ -608,9 +726,7 @@ function FichesRevision() {
                     </select>
 
                     {cours.length === 0 && !chargement && (
-                        <p>
-                            Importe d'abord un cours pour générer une fiche.
-                        </p>
+                        <p>Importe d'abord un cours PDF.</p>
                     )}
 
                     <button
@@ -637,14 +753,14 @@ function FichesRevision() {
                     type="text"
                     placeholder="Rechercher une fiche..."
                     value={recherche}
-                    onChange={(e) => setRecherche(e.target.value)}
+                    onChange={e => setRecherche(e.target.value)}
                 />
 
             </div>
 
             <div className="med-filters">
 
-                {matieres.map((uneMatiere) => (
+                {matieres.map(uneMatiere => (
 
                     <button
                         key={uneMatiere}
@@ -653,7 +769,9 @@ function FichesRevision() {
                                 ? "active"
                                 : ""
                         }
-                        onClick={() => setMatiereActive(uneMatiere)}
+                        onClick={() =>
+                            setMatiereActive(uneMatiere)
+                        }
                     >
                         {uneMatiere}
                     </button>
@@ -683,19 +801,15 @@ function FichesRevision() {
                     </div>
 
                     <h2>
-                        {erreur
-                            ? "Impossible de charger les fiches"
-                            : fiches.length === 0
-                                ? "Tes futures fiches t'attendent !"
-                                : "Aucune fiche trouvée"}
+                        {fiches.length === 0
+                            ? "Tes futures fiches t'attendent !"
+                            : "Aucune fiche trouvée"}
                     </h2>
 
                     <p>
-                        {erreur
-                            ? "Réessaie en actualisant la page."
-                            : fiches.length === 0
-                                ? "Génère ta première fiche à partir d'un cours."
-                                : "Essaie une autre recherche ou une autre matière."}
+                        {fiches.length === 0
+                            ? "Importe un cours pour générer ta première fiche."
+                            : "Essaie une autre recherche."}
                     </p>
 
                 </div>
@@ -704,7 +818,7 @@ function FichesRevision() {
 
                 <div className="med-fiches-grid">
 
-                    {fichesFiltrees.map((fiche) => (
+                    {fichesFiltrees.map(fiche => (
 
                         <article
                             className="med-fiche-card"
@@ -725,6 +839,10 @@ function FichesRevision() {
                                         {fiche.matiere || "Non renseignée"}
                                     </p>
 
+                                    {fiche.automatique && (
+                                        <small>Fiche automatique</small>
+                                    )}
+
                                 </div>
 
                             </div>
@@ -737,7 +855,9 @@ function FichesRevision() {
 
                                 <button
                                     disabled={actionEnCours}
-                                    onClick={() => ouvrirFiche(fiche.id)}
+                                    onClick={() =>
+                                        ouvrirFiche(fiche.id)
+                                    }
                                 >
                                     <BookOpen size={17} />
                                     Ouvrir
@@ -745,7 +865,9 @@ function FichesRevision() {
 
                                 <button
                                     disabled={actionEnCours}
-                                    onClick={() => modifierFiche(fiche.id)}
+                                    onClick={() =>
+                                        modifierFiche(fiche.id)
+                                    }
                                 >
                                     <Pencil size={17} />
                                     Modifier
@@ -753,7 +875,9 @@ function FichesRevision() {
 
                                 <button
                                     disabled={actionEnCours}
-                                    onClick={() => supprimerFiche(fiche.id)}
+                                    onClick={() =>
+                                        supprimerFiche(fiche.id)
+                                    }
                                 >
                                     <Trash2 size={17} />
                                     Supprimer

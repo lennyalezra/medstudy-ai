@@ -1,6 +1,7 @@
 const express = require("express");
 const sequelize = require("./db");
 const auth = require("./middleware/auth");
+const { analyserCours } = require("./serviceIA");
 
 const {
     genererQCM,
@@ -25,7 +26,9 @@ async function requete(sql, replacements = {}, transaction) {
 // Je récupère un cours qui m'appartient
 async function recupererCours(id, utilisateurId) {
     const cours = await requete(
-        `SELECT id, nom, matiere, texte_pdf
+        `SELECT id, nom, matiere,
+                (NULLIF(BTRIM(texte_pdf), '') IS NOT NULL)
+                AS texte_disponible
          FROM cours
          WHERE id = :id
          AND utilisateur_id = :utilisateurId`,
@@ -68,14 +71,20 @@ router.post("/qcm/generer", async (req, res) => {
             });
         }
 
-        if (!cours.texte_pdf || !cours.texte_pdf.trim()) {
+        if (!cours.texte_disponible) {
             return res.status(400).json({
                 message: "Ce cours ne contient aucun texte exploitable"
             });
         }
 
+        // Je réutilise mon analyse sauvegardée
+        const analyse = await analyserCours(
+            cours.id,
+            utilisateurId
+        );
+
         const questions = await genererQCM(
-            cours.texte_pdf,
+            analyse,
             niveau,
             Number(nombre)
         );
@@ -108,7 +117,7 @@ router.post("/qcm/generer", async (req, res) => {
         res.status(201).json(resultat[0]);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error("Erreur QCM :", erreur.message);
 
         res.status(500).json({
             message: "Erreur pendant la génération du QCM"
@@ -133,7 +142,7 @@ router.get("/qcm", async (req, res) => {
         res.json(resultat);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Impossible de récupérer les QCM"
@@ -171,7 +180,7 @@ router.get("/qcm/:id", async (req, res) => {
         res.json(resultat[0]);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération"
@@ -241,7 +250,6 @@ router.post("/qcm/:id/terminer", async (req, res) => {
         // J'enregistre mon résultat et ma révision
         const enregistrement = await sequelize.transaction(
             async transaction => {
-
                 const donnees = await requete(
                     `INSERT INTO resultats_qcm
                      (qcm_id, score, total, pourcentage, reponses)
@@ -290,7 +298,7 @@ router.post("/qcm/:id/terminer", async (req, res) => {
         res.json(enregistrement);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur pendant la sauvegarde du résultat"
@@ -316,7 +324,7 @@ router.get("/resultats-qcm", async (req, res) => {
         res.json(resultat);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération des résultats"
@@ -359,10 +367,10 @@ router.delete("/qcm/:id", async (req, res) => {
         });
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
-            message: "Erreur de suppression"
+            message: "Erreur de suppression du QCM"
         });
     }
 });
@@ -394,14 +402,20 @@ router.post("/flashcards/generer", async (req, res) => {
             });
         }
 
-        if (!cours.texte_pdf || !cours.texte_pdf.trim()) {
+        if (!cours.texte_disponible) {
             return res.status(400).json({
                 message: "Ce cours ne contient aucun texte exploitable"
             });
         }
 
+        // Je réutilise mon analyse sauvegardée
+        const analyse = await analyserCours(
+            cours.id,
+            utilisateurId
+        );
+
         const cartes = await genererFlashcards(
-            cours.texte_pdf,
+            analyse,
             Number(nombre)
         );
 
@@ -442,7 +456,7 @@ router.post("/flashcards/generer", async (req, res) => {
         res.status(201).json(flashcards);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error("Erreur flashcards :", erreur.message);
 
         res.status(500).json({
             message: "Erreur pendant la génération des flashcards"
@@ -467,7 +481,7 @@ router.get("/flashcards", async (req, res) => {
         res.json(resultat);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération des flashcards"
@@ -541,7 +555,7 @@ router.patch("/flashcards/:id", async (req, res) => {
         res.json(carte);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de modification"
@@ -584,7 +598,7 @@ router.delete("/flashcards/:id", async (req, res) => {
         });
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de suppression"
@@ -671,7 +685,7 @@ router.get("/statistiques", async (req, res) => {
         res.json(resultat[0]);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération des statistiques"
@@ -719,7 +733,7 @@ router.get("/progression", async (req, res) => {
         res.json(resultat);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération de la progression"
@@ -745,7 +759,7 @@ router.get("/revisions", async (req, res) => {
         res.json(resultat);
 
     } catch (erreur) {
-        console.error(erreur);
+        console.error(erreur.message);
 
         res.status(500).json({
             message: "Erreur de récupération des révisions"

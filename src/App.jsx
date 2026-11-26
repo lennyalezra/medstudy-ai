@@ -1,26 +1,27 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
-import Dashboard from "./components/Dashboard";
-import ImportCourses from "./components/ImportCourses";
-import MesCours from "./components/MesCours";
+import EspaceDashboard from "./components/EspaceDashboard";
+import EspaceCours from "./components/EspaceCours";
+import Entrainement from "./components/Entrainement";
 import FichesRevision from "./components/FichesRevision";
-import QuizQCM from "./components/QuizQCM";
-import Flashcards from "./components/Flashcards";
-import Statistiques from "./components/Statistiques";
-import Parametres from "./components/Parametres";
 import Connexion from "./components/Connexion";
 import Inscription from "./components/Inscription";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NotificationIA from "./components/NotificationIA";
+import Plus from "./components/Plus";
 
 import { AuthProvider } from "./context/AuthContext";
 
 import "./App.css";
 import "./Revision.css";
 import "./Auth.css";
+import "./Plus.css";
+import "./Navigation.css";
 
 // Je protège mon espace personnel
 function EspacePersonnel() {
+
     return (
         <ProtectedRoute>
 
@@ -28,27 +29,108 @@ function EspacePersonnel() {
 
                 <Sidebar />
 
+                <NotificationIA />
+
                 <div className="main-content">
 
                     <Routes>
 
-                        <Route path="/" element={<Dashboard />} />
+                        <Route
+                            path="/"
+                            element={<EspaceDashboard />}
+                        />
 
-                        <Route path="/cours" element={<MesCours />} />
+                        <Route
+                            path="/cours"
+                            element={<EspaceCours />}
+                        />
 
-                        <Route path="/importer" element={<ImportCourses />} />
+                        <Route
+                            path="/fiches"
+                            element={<FichesRevision />}
+                        />
 
-                        <Route path="/fiches" element={<FichesRevision />} />
+                        <Route
+                            path="/entrainement"
+                            element={<Entrainement />}
+                        />
 
-                        <Route path="/quiz" element={<QuizQCM />} />
+                        <Route
+                            path="/assistant"
+                            element={
+                                <Plus
+                                    key="assistant"
+                                    mode="assistant"
+                                />
+                            }
+                        />
 
-                        <Route path="/flashcards" element={<Flashcards />} />
+                        <Route
+                            path="/parametres"
+                            element={
+                                <Plus
+                                    key="profil"
+                                    mode="profil"
+                                />
+                            }
+                        />
 
-                        <Route path="/statistiques" element={<Statistiques />} />
+                        {/* Je redirige mes anciennes pages */}
 
-                        <Route path="/parametres" element={<Parametres />} />
+                        <Route
+                            path="/importer"
+                            element={
+                                <Navigate
+                                    to="/cours?onglet=importer"
+                                    replace
+                                />
+                            }
+                        />
 
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route
+                            path="/quiz"
+                            element={
+                                <Navigate
+                                    to="/entrainement?onglet=qcm"
+                                    replace
+                                />
+                            }
+                        />
+
+                        <Route
+                            path="/flashcards"
+                            element={
+                                <Navigate
+                                    to="/entrainement?onglet=flashcards"
+                                    replace
+                                />
+                            }
+                        />
+
+                        <Route
+                            path="/statistiques"
+                            element={
+                                <Navigate
+                                    to="/?onglet=statistiques"
+                                    replace
+                                />
+                            }
+                        />
+
+                        <Route
+                            path="/organisation"
+                            element={<Navigate to="/cours" replace />}
+                        />
+
+                        <Route
+                            path="/planning"
+                            element={<Navigate to="/" replace />}
+                        />
+
+                        <Route
+                            path="*"
+                            element={<Navigate to="/" replace />}
+                        />
 
                     </Routes>
 
@@ -62,16 +144,26 @@ function EspacePersonnel() {
 
 // Je relie mes pages à mon authentification
 function App() {
+
     return (
         <AuthProvider>
 
             <Routes>
 
-                <Route path="/connexion" element={<Connexion />} />
+                <Route
+                    path="/connexion"
+                    element={<Connexion />}
+                />
 
-                <Route path="/inscription" element={<Inscription />} />
+                <Route
+                    path="/inscription"
+                    element={<Inscription />}
+                />
 
-                <Route path="/*" element={<EspacePersonnel />} />
+                <Route
+                    path="/*"
+                    element={<EspacePersonnel />}
+                />
 
             </Routes>
 

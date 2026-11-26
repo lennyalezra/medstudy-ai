@@ -1,0 +1,68 @@
+.notifications-ia {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    pointer-events: none;
+}
+
+.notification-ia {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #e4d7f3;
+    border-left: 5px solid #9474c5;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(67, 43, 102, 0.15);
+    pointer-events: auto;
+}
+
+.notification-ia h3 {
+    color: #60428c;
+    font-size: 16px;
+    margin: 0 24px 8px 0;
+}
+
+.notification-ia p {
+    color: #776a85;
+    font-size: 13px;
+    margin: 0 0 14px;
+    overflow-wrap: anywhere;
+}
+
+.notification-ia-fermer {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    color: #776a85;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.notification-ia-action {
+    border: none;
+    border-radius: 8px;
+    background: #9474c5;
+    color: white;
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.notification-ia-action:hover {
+    background: #7954ad;
+}
+
+@media (max-width: 600px) {
+    .notifications-ia {
+        right: 16px;
+        bottom: 16px;
+    }
+}

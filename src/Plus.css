@@ -1,0 +1,515 @@
+/* Je personnalise mes nouvelles pages */
+
+.plus-page section {
+    background: #fff;
+    border: 1px solid #e6dcef;
+    border-radius: 15px;
+    padding: 18px;
+    margin-top: 12px;
+}
+
+.plus-page form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.plus-page input:not([type=checkbox]),
+.plus-page select,
+.plus-page textarea {
+    border: 1px solid #d8cbe8;
+    border-radius: 9px;
+    padding: 10px;
+    background: inherit;
+    color: inherit;
+    max-width: 100%;
+}
+
+.plus-page textarea {
+    width: 100%;
+    min-height: 85px;
+    resize: vertical;
+}
+
+.plus-page button {
+    background: #7954ad;
+    color: white;
+    border: 0;
+    border-radius: 9px;
+    padding: 9px 14px;
+    margin: 3px;
+}
+
+.plus-page button:disabled {
+    opacity: .5;
+}
+
+.plus-page article {
+    padding: 12px;
+    border-bottom: 1px solid #e6dcef;
+    overflow-wrap: anywhere;
+}
+
+.plus-page label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Je conserve mon mode sombre */
+
+.med-dark .app-container {
+    filter: invert(.88) hue-rotate(180deg);
+}
+
+.med-dark img {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* Je rends mon application plus compacte */
+
+@media (min-width: 769px) {
+
+    #root .app-container {
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    #root .app-container > .main-content {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    #root .main-content > main {
+        padding: 16px 25px;
+        min-height: 0;
+    }
+
+    .main-content h1 {
+        font-size: 25px;
+    }
+
+    /* Je réduis les espaces de mon menu */
+
+    #root .app-container > .sidebar {
+        height: 100%;
+        min-height: 0;
+        padding: 15px 13px;
+        gap: 12px;
+    }
+
+    .sidebar .sidebar-logo {
+        padding: 4px 0;
+    }
+
+    .sidebar .sidebar-nav {
+        gap: 3px;
+    }
+
+    .sidebar .sidebar-nav a.sidebar-link {
+        padding: 9px 12px;
+        font-size: 13px;
+        gap: 10px;
+    }
+
+    .sidebar .sidebar-footer {
+        padding-top: 10px;
+    }
+
+    .sidebar-profile {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+
+    .sidebar-logout {
+        padding: 9px;
+    }
+
+    /* Je compacte mon tableau de bord */
+
+    .dashboard .welcome-banner {
+        margin-top: 10px;
+        padding: 13px 18px;
+    }
+
+    .welcome-banner h2 {
+        font-size: 19px;
+        margin-bottom: 5px;
+    }
+
+    .welcome-banner p {
+        margin-bottom: 8px;
+    }
+
+    .welcome-banner button {
+        padding: 8px 16px;
+    }
+
+    .dashboard .stats-container {
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .dashboard .stat-card {
+        min-height: 65px;
+        padding: 10px;
+    }
+
+    .stat-card h3 {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .stat-card p {
+        font-size: 24px;
+    }
+
+    .dashboard .recent-courses {
+        margin-top: 12px;
+        gap: 10px;
+    }
+
+    .recent-courses > h2 {
+        font-size: 18px;
+    }
+
+    .dashboard .course-card {
+        min-height: 75px;
+        padding: 12px 15px;
+    }
+
+    .dashboard .revision-overview {
+        margin-top: 12px;
+        gap: 10px;
+    }
+
+    .dashboard .revision-card {
+        min-height: 95px;
+        padding: 12px 15px;
+    }
+
+    .dashboard .revision-card h2 {
+        font-size: 17px;
+    }
+
+    .dashboard .recent-courses > .med-empty {
+        min-height: 90px;
+        padding: 12px;
+    }
+
+    /* Je réduis les en-têtes de mes pages */
+
+    .med-page-header {
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .med-page-header h1 {
+        font-size: 25px;
+    }
+
+    .med-page-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .med-page-icon svg {
+        width: 25px;
+        height: 25px;
+    }
+
+    .med-section-title {
+        margin-bottom: 12px;
+        font-size: 19px;
+    }
+
+    .med-primary-btn,
+    .med-secondary-btn {
+        padding: 9px 15px;
+    }
+
+    /* Je compacte ma page d'importation */
+
+    .import-card {
+        min-height: 0;
+        margin: 12px auto;
+        padding: 20px 30px;
+    }
+
+    .import-illustration {
+        height: 85px;
+        width: auto;
+        margin-bottom: 8px;
+    }
+
+    .import-card h1 {
+        font-size: 25px;
+    }
+
+    .import-card > p {
+        margin-bottom: 15px;
+    }
+
+    .upload-zone {
+        min-height: 140px;
+        padding: 15px;
+        gap: 8px;
+    }
+
+    .import-card > button {
+        padding: 11px 20px;
+    }
+
+    /* Je compacte mes cours */
+
+    .cours-recherche {
+        margin: 15px auto;
+        padding: 12px 15px;
+    }
+
+    .cours-liste {
+        gap: 10px;
+    }
+
+    .cours-card {
+        min-height: 75px;
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .cours-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .cours-details {
+        padding: 14px;
+    }
+
+    .cours-accueil {
+        min-height: 160px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+
+    .cours-pdf {
+        height: clamp(300px, 58dvh, 650px);
+    }
+
+    /* Je compacte mes formulaires */
+
+    .med-generation-form,
+    .med-edition-form {
+        padding: 16px;
+        margin: 12px 0 16px;
+        gap: 10px;
+    }
+
+    .med-generation-form select,
+    .med-edition-form input,
+    .med-field select {
+        padding: 9px 12px;
+    }
+
+    .med-field {
+        gap: 6px;
+    }
+
+    .med-filters {
+        margin: 12px 0;
+        gap: 8px;
+    }
+
+    .med-filters button {
+        padding: 8px 14px;
+    }
+
+    .med-search {
+        padding: 11px 14px;
+    }
+
+    .med-empty {
+        min-height: 170px;
+        padding: 20px;
+        gap: 10px;
+    }
+
+    .med-empty-icon {
+        width: 55px;
+        height: 55px;
+    }
+
+    /* Je compacte mes fiches */
+
+    .med-fiches-grid {
+        gap: 12px;
+    }
+
+    .med-fiche-card {
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .med-fiche-lecture {
+        padding: 20px;
+    }
+
+    .med-fiche-outils,
+    .med-edition-actions {
+        margin: 12px 0;
+    }
+
+    /* Je compacte mes QCM */
+
+    .med-hero {
+        padding: 18px;
+        gap: 15px;
+    }
+
+    .med-quiz-card {
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .med-quiz-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .med-question-card,
+    .med-result-card {
+        padding: 22px;
+        margin: 15px auto;
+    }
+
+    .med-question-card > h2 {
+        margin: 20px 0;
+        font-size: 21px;
+    }
+
+    .med-reponses {
+        gap: 10px;
+    }
+
+    .med-reponses button {
+        min-height: 55px;
+        padding: 12px;
+    }
+
+    /* Je compacte mes flashcards */
+
+    .flashcard-session {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .flashcard {
+        min-height: 210px;
+        padding: 20px;
+        gap: 12px;
+    }
+
+    .flashcard-actions {
+        gap: 8px;
+    }
+
+    /* Je compacte mes statistiques */
+
+    .med-stats-grid {
+        gap: 10px;
+    }
+
+    .med-stat-card {
+        padding: 13px;
+    }
+
+    .med-stat-icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .med-stat-card h2 {
+        font-size: 24px;
+    }
+
+    .med-stat-panels {
+        gap: 12px;
+    }
+
+    .med-panel {
+        min-height: 0;
+        padding: 16px;
+    }
+
+    .med-panel > h2 {
+        margin-bottom: 14px;
+        font-size: 18px;
+    }
+
+    .med-panel-empty {
+        min-height: 120px;
+    }
+
+    .med-donut {
+        width: 150px;
+        height: 150px;
+    }
+
+    .med-donut > div {
+        width: 112px;
+        height: 112px;
+    }
+
+    .revision-graph {
+        gap: 12px;
+        padding: 12px 0;
+    }
+
+    .revision-list {
+        gap: 12px;
+    }
+
+    .progression-card,
+    .correction-card {
+        padding: 15px;
+    }
+
+    .med-history-item {
+        padding: 10px;
+    }
+}
+
+/* J'organise mes statistiques sur les grands écrans */
+
+@media (min-width: 1450px) {
+
+    .dashboard .stats-container,
+    .main-content .med-stats-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+/* Je conserve une interface adaptée au téléphone */
+
+@media (max-width: 768px) {
+
+    .plus-page section {
+        padding: 14px;
+    }
+
+    .plus-page form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .plus-page input:not([type=checkbox]),
+    .plus-page select,
+    .plus-page textarea {
+        width: 100%;
+    }
+}

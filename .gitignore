@@ -26,3 +26,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Fichiers secrets
+.env
+.env.*
+!.env.example
+
+# Dépendances
+node_modules/
+
+# Archives
+*.zip
+
+# Refact
+.refact/

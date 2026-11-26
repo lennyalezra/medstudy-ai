@@ -5,11 +5,9 @@ import {
     BookOpen,
     LayoutDashboard,
     FolderOpen,
-    Upload,
     FileText,
     Brain,
-    Layers,
-    BarChart3,
+    MessageCircle,
     Settings,
     LogOut
 } from "lucide-react";
@@ -19,7 +17,7 @@ function Sidebar() {
     const navigate = useNavigate();
     const { utilisateur, deconnexion } = useAuth();
 
-    // Je prépare mes liens de navigation
+    // Je prépare mes cinq pages
     const liens = [
         {
             adresse: "/",
@@ -32,34 +30,19 @@ function Sidebar() {
             Icone: FolderOpen
         },
         {
-            adresse: "/importer",
-            titre: "Importer un cours",
-            Icone: Upload
-        },
-        {
             adresse: "/fiches",
             titre: "Fiches de révision",
             Icone: FileText
         },
         {
-            adresse: "/quiz",
-            titre: "Quiz / QCM",
+            adresse: "/entrainement",
+            titre: "S'entraîner",
             Icone: Brain
         },
         {
-            adresse: "/flashcards",
-            titre: "Mes flashcards",
-            Icone: Layers
-        },
-        {
-            adresse: "/statistiques",
-            titre: "Statistiques",
-            Icone: BarChart3
-        },
-        {
-            adresse: "/parametres",
-            titre: "Paramètres",
-            Icone: Settings
+            adresse: "/assistant",
+            titre: "Assistant IA",
+            Icone: MessageCircle
         }
     ];
 
@@ -71,8 +54,12 @@ function Sidebar() {
 
     // Je ferme ma session
     function handleDeconnexion() {
+
         deconnexion();
-        navigate("/connexion", { replace: true });
+
+        navigate("/connexion", {
+            replace: true
+        });
     }
 
     return (
@@ -86,7 +73,6 @@ function Sidebar() {
 
             </div>
 
-            {/* J'affiche mes liens */}
             <nav className="sidebar-nav">
 
                 {liens.map(({ adresse, titre, Icone }) => (
@@ -112,10 +98,17 @@ function Sidebar() {
 
             </nav>
 
-            {/* J'affiche mon compte */}
             <div className="sidebar-footer">
 
-                <div className="sidebar-profile">
+                <NavLink
+                    to="/parametres"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "sidebar-profile profil-cliquable actif"
+                            : "sidebar-profile profil-cliquable"
+                    }
+                    title="Paramètres du compte"
+                >
 
                     <div className="sidebar-avatar">
                         {initiales || "U"}
@@ -127,11 +120,16 @@ function Sidebar() {
                             {utilisateur?.prenom} {utilisateur?.nom}
                         </strong>
 
-                        <p>{utilisateur?.email}</p>
+                        <p>Mon compte</p>
 
                     </div>
 
-                </div>
+                    <Settings
+                        size={18}
+                        className="profil-settings"
+                    />
+
+                </NavLink>
 
                 <button
                     className="sidebar-logout"
