@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -15,19 +14,40 @@ const { PDFParse } = require("pdf-parse");
 const auth = require("./middleware/auth");
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
-// Je configure l'importation de mes PDF
+// Je configure mes adresses autorisées
+const originesAutorisees = [
+    "http://localhost:5173",
+    ...(process.env.FRONTEND_URL || "")
+        .split(",")
+        .map(url => url.trim().replace(/\/+$/, ""))
+        .filter(Boolean)
+];
+
+// Je configure la taille maximale de mes PDF
+const limitePDF = Number(process.env.MAX_PDF_MB) ||
+    (process.env.NODE_ENV === "production" ? 20 : 100);
+
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 100 * 1024 * 1024
+        fileSize: limitePDF * 1024 * 1024
     }
 });
 
 // Je configure mon serveur
 app.use(cors({
-    origin: "http://localhost:5173"
+    origin: (origin, callback) => {
+        if (!origin || originesAutorisees.includes(origin)) {
+            return callback(null, true);
+        }
+
+        const erreur = new Error("Origine non autorisée");
+        erreur.status = 403;
+
+        return callback(erreur);
+    }
 }));
 
 app.use(express.json());
@@ -499,11 +519,11 @@ app.post("/api/fiches/generer", async (req, res) => {
         const [fiches] = await sequelize.query(
             `INSERT INTO fiches
              (
-                cours_id,
-                titre,
-                matiere,
-                contenu,
-                automatique
+                 cours_id,
+                 titre,
+                 matiere,
+                 contenu,
+                 automatique
              )
              SELECT id, :titre, matiere, :contenu, FALSE
              FROM cours
@@ -825,9 +845,15 @@ app.use((req, res) => {
 // Je gère les erreurs de mon serveur
 app.use((err, req, res, next) => {
 
+    if (err.status === 403) {
+        return res.status(403).json({
+            message: "Origine non autorisée"
+        });
+    }
+
     if (err.code === "LIMIT_FILE_SIZE") {
         return res.status(413).json({
-            message: "Le fichier a dépassé la limite de 100 Mo"
+            message: `Le fichier a dépassé la limite de ${limitePDF} Mo`
         });
     }
 
@@ -854,9 +880,11 @@ app.use((err, req, res, next) => {
 async function demarrerServeur() {
     try {
         if (!process.env.JWT_SECRET) {
-            throw new Error(
-                "JWT_SECRET manquant dans le fichier .env"
-            );
+            throw new Error("JWT_SECRET manquant");
+        }
+
+        if (!process.env.GROQ_API_KEY) {
+            throw new Error("GROQ_API_KEY manquante");
         }
 
         await sequelize.authenticate();
@@ -866,9 +894,10 @@ async function demarrerServeur() {
         // Je reprends mes générations interrompues
         await reprendreGenerations();
 
-        app.listen(PORT, () => {
+        // J'écoute sur le port de mon hébergeur
+        app.listen(PORT, "0.0.0.0", () => {
             console.log(
-                `Serveur démarré sur http://localhost:${PORT}`
+                `Serveur démarré sur le port ${PORT}`
             );
         });
 

@@ -1,4 +1,8 @@
-const API = "http://localhost:3001/api";
+// Je récupère l'adresse de mon backend
+const API = (
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:3001/api"
+).replace(/\/+$/, "");
 
 // Je prépare mes requêtes avec mon token
 async function envoyerRequete(route, options = {}) {
